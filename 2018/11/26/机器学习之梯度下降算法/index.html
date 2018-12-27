@@ -75,7 +75,7 @@
 
 
 
-  <meta name="keywords" content="Hexo, NexT">
+  <meta name="keywords" content="Machine learning,">
 
 
 
@@ -86,17 +86,18 @@
 
 
 
-<meta name="description" content="一只想变成咸鱼的猿。">
-<meta name="keywords" content="博客,心得">
-<meta property="og:type" content="website">
-<meta property="og:title" content="程序员小站">
-<meta property="og:url" content="http://blog.lindebiao.top/archives/2018/index.html">
+<meta name="description" content="本文记录了本人在学习机器学习的梯度下降算法的一些心得与体会。 1.什么是梯度下降算法  梯度下降是迭代法的一种,可以用于求解最小二乘问题(线性和非线性都可以)。在求解机器学习算法的模型参数，即无约束优化问题时，梯度下降（Gradient Descent）是最常采用的方法之一，另一种常用的方法是最小二乘法。在求解损失函数的最小值时，可以通过梯度下降法来一步步的迭代求解，得到最小化的损失函数和模型参数">
+<meta name="keywords" content="Machine learning">
+<meta property="og:type" content="article">
+<meta property="og:title" content="机器学习之梯度下降算法">
+<meta property="og:url" content="http://blog.lindebiao.top/2018/11/26/机器学习之梯度下降算法/index.html">
 <meta property="og:site_name" content="程序员小站">
-<meta property="og:description" content="一只想变成咸鱼的猿。">
+<meta property="og:description" content="本文记录了本人在学习机器学习的梯度下降算法的一些心得与体会。 1.什么是梯度下降算法  梯度下降是迭代法的一种,可以用于求解最小二乘问题(线性和非线性都可以)。在求解机器学习算法的模型参数，即无约束优化问题时，梯度下降（Gradient Descent）是最常采用的方法之一，另一种常用的方法是最小二乘法。在求解损失函数的最小值时，可以通过梯度下降法来一步步的迭代求解，得到最小化的损失函数和模型参数">
 <meta property="og:locale" content="zh-cn">
+<meta property="og:updated_time" content="2018-11-28T10:01:08.093Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="程序员小站">
-<meta name="twitter:description" content="一只想变成咸鱼的猿。">
+<meta name="twitter:title" content="机器学习之梯度下降算法">
+<meta name="twitter:description" content="本文记录了本人在学习机器学习的梯度下降算法的一些心得与体会。 1.什么是梯度下降算法  梯度下降是迭代法的一种,可以用于求解最小二乘问题(线性和非线性都可以)。在求解机器学习算法的模型参数，即无约束优化问题时，梯度下降（Gradient Descent）是最常采用的方法之一，另一种常用的方法是最小二乘法。在求解损失函数的最小值时，可以通过梯度下降法来一步步的迭代求解，得到最小化的损失函数和模型参数">
 
 
 
@@ -126,13 +127,13 @@
 
 
 
-  <link rel="canonical" href="http://blog.lindebiao.top/archives/2018/">
+  <link rel="canonical" href="http://blog.lindebiao.top/2018/11/26/机器学习之梯度下降算法/">
 
 
 
 
 
-  <title>Archive | 程序员小站</title>
+  <title>机器学习之梯度下降算法 | 程序员小站</title>
   
 
 
@@ -151,7 +152,7 @@
     
   
 
-  <div class="container sidebar-position-left page-archive">
+  <div class="container sidebar-position-left page-post-detail">
     <div class="headband"><a href="https://github.com/LinsVert" class="github-corner" aria-label="View source on GitHub"><svg width="80" height="80" viewbox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"/><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"/><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"/></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style></div>
 
     <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
@@ -255,177 +256,157 @@
           <div id="content" class="content">
             
 
-  
-  
-  
-  <div class="post-block archive">
-    <div id="posts" class="posts-collapse">
-      <span class="archive-move-on"></span>
+  <div id="posts" class="posts-expand">
+    
 
-      <span class="archive-page-counter">
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://blog.lindebiao.top/2018/11/26/机器学习之梯度下降算法/">
+
+    <span hidden itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="LinsVert">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope="" itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="程序员小站">
+    </span>
+
+    
+      <header class="post-header">
+
         
         
+          <h1 class="post-title" itemprop="name headline">机器学习之梯度下降算法</h1>
         
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2018-11-26T23:04:43+08:00">
+                2018-11-26
+              </time>
+            
+
+            
+
+            
+          </span>
+
           
-        
-        Um..! 4 posts in total. Keep on posting.
-      </span>
 
-      
-
-        
-        
-        
-
-        
           
-          <div class="collection-title">
-            <h1 class="archive-year" id="archive-year-2018">2018</h1>
-          </div>
-        
-        
+            
+          
 
-        
+          
+          
 
-  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
-    <header class="post-header">
+          
 
-      <h2 class="post-title">
-        
-            <a class="post-title-link" href="/2018/12/26/投机倒把之邀请撸某币/" itemprop="url">
-              
-                <span itemprop="name">投机倒把之邀请撸ccvt币</span>
-              
-            </a>
-        
-      </h2>
+          
 
-      <div class="post-meta">
-        <time class="post-time" itemprop="dateCreated" datetime="2018-12-26T21:36:00+08:00" content="2018-12-26">
-          12-26
-        </time>
-      </div>
+          
 
-    </header>
-  </article>
+        </div>
+      </header>
+    
 
-
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
 
       
-
-        
-        
-        
-
-        
-        
-
-        
-
-  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
-    <header class="post-header">
-
-      <h2 class="post-title">
-        
-            <a class="post-title-link" href="/2018/11/28/cs229-1/" itemprop="url">
-              
-                <span itemprop="name">CS229 课程讲义中文翻译 第一节</span>
-              
-            </a>
-        
-      </h2>
-
-      <div class="post-meta">
-        <time class="post-time" itemprop="dateCreated" datetime="2018-11-28T19:27:24+08:00" content="2018-11-28">
-          11-28
-        </time>
-      </div>
-
-    </header>
-  </article>
-
-
-
       
 
-        
-        
-        
-
-        
-        
-
-        
-
-  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
-    <header class="post-header">
-
-      <h2 class="post-title">
-        
-            <a class="post-title-link" href="/2018/11/26/机器学习之梯度下降算法/" itemprop="url">
-              
-                <span itemprop="name">机器学习之梯度下降算法</span>
-              
-            </a>
-        
-      </h2>
-
-      <div class="post-meta">
-        <time class="post-time" itemprop="dateCreated" datetime="2018-11-26T23:04:43+08:00" content="2018-11-26">
-          11-26
-        </time>
-      </div>
-
-    </header>
-  </article>
-
-
+      
+        <p>本文记录了本人在学习机器学习的梯度下降算法的一些心得与体会。</p>
+<p>1.什么是梯度下降算法</p>
+<ul>
+<li>梯度下降是迭代法的一种,可以用于求解最小二乘问题(线性和非线性都可以)。在求解机器学习算法的模型参数，即无约束优化问题时，梯度下降（Gradient Descent）是最常采用的方法之一，另一种常用的方法是最小二乘法。在求解损失函数的最小值时，可以通过梯度下降法来一步步的迭代求解，得到最小化的损失函数和模型参数值。反过来，如果我们需要求解损失函数的最大值，这时就需要用梯度上升法来迭代了。在机器学习中，基于基本的梯度下降法发展了两种梯度下降方法，分别为随机梯度下降法和批量梯度下降法。 –百度词条</li>
+</ul>
+<p>这种说法很官方，可以拿一个例子来说明：比如我需要根据一组 <code>房间大小和相对房间卖出价格</code>来推测一个任意大小的房间的最可能卖出的价格，因为这个是一个线性的问题，可以先假设 y = ax ;y 表示价格 x 表示房间大小 a是参数是一个需要求证数,我们需要做的就是算出这个a最有可能的值，而计算这个a的方法可以理解为用一个特定方法去逼近它–这个就是梯度下降算法。<br>\begin{equation}<br>\theta<br>\end{equation}</p>
+<p>\begin{equation}<br>  \int_0^\infty \frac{x^3}{e^x-1}\,dx = \frac{\pi^4}{15}<br>  \label{eq:sample}<br>\end{equation}</p>
 
       
-
-        
-        
-        
-
-        
-        
-
-        
-
-  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article">
-    <header class="post-header">
-
-      <h2 class="post-title">
-        
-            <a class="post-title-link" href="/2018/11/26/hello-world/" itemprop="url">
-              
-                <span itemprop="name">Hello World</span>
-              
-            </a>
-        
-      </h2>
-
-      <div class="post-meta">
-        <time class="post-time" itemprop="dateCreated" datetime="2018-11-26T21:00:28+08:00" content="2018-11-26">
-          11-26
-        </time>
-      </div>
-
-    </header>
-  </article>
-
-
-
-      
-
     </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Machine-learning/" rel="tag"># Machine learning</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/11/26/hello-world/" rel="next" title="Hello World">
+                <i class="fa fa-chevron-left"></i> Hello World
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/11/28/cs229-1/" rel="prev" title="CS229 课程讲义中文翻译 第一节">
+                CS229 课程讲义中文翻译 第一节 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
   </div>
   
   
   
+  </article>
 
-  
 
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
 
 
           </div>
@@ -433,6 +414,10 @@
 
 
           
+
+  
+
+
 
         </div>
         
@@ -667,6 +652,10 @@
   
 
   
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
 
   
 
