@@ -86,13 +86,13 @@
 
 
 
-<meta name="description" content="之前逛掘金帖子的时候，发现一个群的群主拿Python刷了他在某个博客的阅读量，今天我也用世界上最好的语言 : ) PHP来 刷一刷某站点的阅读量。 框架用的是 PHPSpider一个比较轻量的爬虫框架。本爬虫主要用了其中的 request库和 selector库。想要了解这个框架的可以链过去看看。 进入正题：1.瞎几把分析一波：进入文章详情页，刷新几遍，发现阅读量上去了，说明刷阅读量方法可行。 2">
+<meta name="description" content="之前逛掘金帖子的时候，发现一个群的群主拿Python刷了他在某个博客的阅读量，今天我也用世界上最好的语言 : ) PHP来 刷一刷某站点的阅读量。 框架用的是 PHPSpider一个比较轻量的爬虫框架。本爬虫主要用了其中的 request库 和 selector库。想要了解这个框架的可以链过去看看。 进入正题：1.瞎几把分析一波：进入文章详情页，刷新几遍，发现阅读量上去了，说明刷阅读量方法可行。">
 <meta name="keywords" content="博客,心得">
 <meta property="og:type" content="article">
 <meta property="og:title" content="程序员小站">
 <meta property="og:url" content="https://blog.lindebiao.top/2019/03/04/我用PHP刷某站的阅读量/index.html">
 <meta property="og:site_name" content="程序员小站">
-<meta property="og:description" content="之前逛掘金帖子的时候，发现一个群的群主拿Python刷了他在某个博客的阅读量，今天我也用世界上最好的语言 : ) PHP来 刷一刷某站点的阅读量。 框架用的是 PHPSpider一个比较轻量的爬虫框架。本爬虫主要用了其中的 request库和 selector库。想要了解这个框架的可以链过去看看。 进入正题：1.瞎几把分析一波：进入文章详情页，刷新几遍，发现阅读量上去了，说明刷阅读量方法可行。 2">
+<meta property="og:description" content="之前逛掘金帖子的时候，发现一个群的群主拿Python刷了他在某个博客的阅读量，今天我也用世界上最好的语言 : ) PHP来 刷一刷某站点的阅读量。 框架用的是 PHPSpider一个比较轻量的爬虫框架。本爬虫主要用了其中的 request库 和 selector库。想要了解这个框架的可以链过去看看。 进入正题：1.瞎几把分析一波：进入文章详情页，刷新几遍，发现阅读量上去了，说明刷阅读量方法可行。">
 <meta property="og:locale" content="zh-cn">
 <meta property="og:image" content="https://upload-images.jianshu.io/upload_images/7393873-44261b7a2aaf10db.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/520">
 <meta property="og:image" content="https://upload-images.jianshu.io/upload_images/7393873-24d4fad4ea0777cc.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/520">
@@ -100,10 +100,10 @@
 <meta property="og:image" content="https://upload-images.jianshu.io/upload_images/7393873-da85b3d69d924f36.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/520">
 <meta property="og:image" content="https://upload-images.jianshu.io/upload_images/7393873-82ecbc67e0b7e471.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/520">
 <meta property="og:image" content="https://upload-images.jianshu.io/upload_images/7393873-56b30ad8a587c043.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/520">
-<meta property="og:updated_time" content="2019-03-12T14:59:22.717Z">
+<meta property="og:updated_time" content="2019-03-12T15:03:32.419Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="程序员小站">
-<meta name="twitter:description" content="之前逛掘金帖子的时候，发现一个群的群主拿Python刷了他在某个博客的阅读量，今天我也用世界上最好的语言 : ) PHP来 刷一刷某站点的阅读量。 框架用的是 PHPSpider一个比较轻量的爬虫框架。本爬虫主要用了其中的 request库和 selector库。想要了解这个框架的可以链过去看看。 进入正题：1.瞎几把分析一波：进入文章详情页，刷新几遍，发现阅读量上去了，说明刷阅读量方法可行。 2">
+<meta name="twitter:description" content="之前逛掘金帖子的时候，发现一个群的群主拿Python刷了他在某个博客的阅读量，今天我也用世界上最好的语言 : ) PHP来 刷一刷某站点的阅读量。 框架用的是 PHPSpider一个比较轻量的爬虫框架。本爬虫主要用了其中的 request库 和 selector库。想要了解这个框架的可以链过去看看。 进入正题：1.瞎几把分析一波：进入文章详情页，刷新几遍，发现阅读量上去了，说明刷阅读量方法可行。">
 <meta name="twitter:image" content="https://upload-images.jianshu.io/upload_images/7393873-44261b7a2aaf10db.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/520">
 
 
@@ -345,7 +345,7 @@
 
       
         <p>之前逛掘金帖子的时候，发现一个群的群主拿Python刷了他在某个博客的阅读量，今天我也用世界上最好的语言 : ) PHP来 刷一刷某站点的阅读量。</p>
-<p>框架用的是 <a href="https://github.com/owner888/phpspider" target="_blank" rel="noopener">PHPSpider</a>一个比较轻量的爬虫框架。本爬虫主要用了其中的 <code>request库</code>和 <code>selector库</code>。想要了解这个框架的可以链过去看看。</p>
+<p>框架用的是 <a href="https://github.com/owner888/phpspider" target="_blank" rel="noopener">PHPSpider</a>一个比较轻量的爬虫框架。本爬虫主要用了其中的 <code>request库</code> 和 <code>selector库</code>。想要了解这个框架的可以链过去看看。</p>
 <h6 id="进入正题："><a href="#进入正题：" class="headerlink" title="进入正题："></a>进入正题：</h6><p>1.瞎几把分析一波：进入文章详情页，刷新几遍，发现阅读量上去了，说明刷阅读量方法可行。<br><img src="https://upload-images.jianshu.io/upload_images/7393873-44261b7a2aaf10db.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/520" alt="第一次"><br><img src="https://upload-images.jianshu.io/upload_images/7393873-24d4fad4ea0777cc.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/520" alt="第三次"></p>
 <p>2.先直接访问文章详情页</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">include __DIR__.&quot;/../autoloader.php&quot;;</span><br><span class="line">use spider\core\requests;</span><br><span class="line">$url = &quot;https://www.jianshu.com/p/26c2eca28dc5&quot;;</span><br><span class="line">$html = requests::get($url);//简单的get</span><br></pre></td></tr></table></figure>
