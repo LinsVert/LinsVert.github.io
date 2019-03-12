@@ -341,98 +341,16 @@
       
         
           
-            <h6 id="最近有想转golang的想法，所以抽了点时间学习了一波golang的基本语法，感觉上这个静态解析语言用起来的确没有php那么舒服，但感觉上用起来还是很爽的。"><a href="#最近有想转golang的想法，所以抽了点时间学习了一波golang的基本语法，感觉上这个静态解析语言用起来的确没有php那么舒服，但感觉上用起来还是很爽的。" class="headerlink" title="最近有想转golang的想法，所以抽了点时间学习了一波golang的基本语法，感觉上这个静态解析语言用起来的确没有php那么舒服，但感觉上用起来还是很爽的。"></a>最近有想转golang的想法，所以抽了点时间学习了一波golang的基本语法，感觉上这个静态解析语言用起来的确没有php那么舒服，但感觉上用起来还是很爽的。</h6><h6 id="刚好女票要换个情侣头像-那就用Go爬一波情侣头像吧～"><a href="#刚好女票要换个情侣头像-那就用Go爬一波情侣头像吧～" class="headerlink" title="刚好女票要换个情侣头像,那就用Go爬一波情侣头像吧～"></a>刚好女票要换个情侣头像,那就用Go爬一波情侣头像吧～</h6><h5 id="Let’s-Code"><a href="#Let’s-Code" class="headerlink" title="Let’s Code"></a>Let’s Code</h5><p><img src="https://ae01.alicdn.com/kf/HTB10sUDLrvpK1RjSZFq5jcXUVXai.gif" alt=""></p>
-<h5 id="本次使用的工具"><a href="#本次使用的工具" class="headerlink" title="本次使用的工具"></a>本次使用的工具</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">golang go1.11.4</span><br><span class="line">编辑器 vscode1.31.1</span><br><span class="line">浏览器 Chrome72.0.3626.119</span><br></pre></td></tr></table></figure>
-<h3 id="1-找到目标网站-分析一波"><a href="#1-找到目标网站-分析一波" class="headerlink" title="1.找到目标网站 分析一波"></a>1.找到目标网站 分析一波</h3><p><img src="https://ae01.alicdn.com/kf/HTB1rjkFLCzqK1RjSZFj762lCFXa2.png" alt="目标网站模样" title="[目标网站]"><br>F12看一波结构:</p>
-<p>发现每个 <code>li</code> 对应跳转一个目标网站，估计是图片的集合</p>
-<p><img src="https://ae01.alicdn.com/kf/HTB1pok6LyLaK1RjSZFx761mPFXaT.png" alt="页面结构" title="[页面结构]"></p>
-<p>翻到底部，看到有分页标记（感觉是模版生成的。。。）,看一波链接，这个链接遵循只是最后资源地址不一样，其他是一样的，所以可以使用正则匹配一波，可以利用分页爬取比较大量的起始链接。</p>
-<p><img src="https://ae01.alicdn.com/kf/HTB1VGXXLQvoK1RjSZPf760PKFXaK.png" alt="分页链接" title="[分页链接]"></p>
-<p>1.分页正则:</p>
-<p><code>http:\/\/www.wxcha.com\/touxiang\/qinglv\/hot_\d+.html</code></p>
-<p>2.详情页正则:</p>
-<p><code>http://www.wxcha.com/touxiang/\d+.html</code></p>
-<p>接下来去详情页看看：</p>
-<p><img src="https://ae01.alicdn.com/kf/HTB10CdfLH2pK1RjSZFs761NlXXaF.png" alt="详情页" title="[详情页]"></p>
-<p>F12定位下图片元素,不难得到图片资源地址的正则:</p>
-<p>3.图片地址正则:</p>
-<p><code>http://img.wxcha.com/file/\d+/\d+/\w+.jpg</code></p>
-<p>好了，目前看来这个网站的图片结构还是很明朗的，并没有用JS加载，应该是模版同步渲染的，接下来就是研究下怎么设计这个爬虫。</p>
-<h3 id="2-设计爬虫"><a href="#2-设计爬虫" class="headerlink" title="2.设计爬虫"></a>2.设计爬虫</h3><p>页面有3层，所以可以有以下思路:</p>
-<p>1.先用第一页，按一定深度爬取分页，拿到一定数量基础页面链接</p>
-<p>2.利用这些基础链接，获取详情页的链接</p>
-<p>3.循环获取图片地址，并下载</p>
-<p>思路理顺了，接下来就是如何设计这个爬虫了。</p>
-<hr>
-<p>为了熟悉Golang，所以没有用其他的爬虫框架，考虑到复用性需要写一个爬虫的方法用于一些基本的数据爬取,所以先定义一个结构体（可以简单理解为PHP的类）:</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">type Spider struct &#123;</span><br><span class="line">	Types string</span><br><span class="line">	Url string</span><br><span class="line">	Regex string</span><br><span class="line">	Deep int64</span><br><span class="line">	Client *http.Client</span><br><span class="line">	Req *http.Request </span><br><span class="line">	ResponseBody []byte</span><br><span class="line">	Headers map[string]string</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>Types是Request Method，像<code>Get</code>或<code>Post</code></p>
-<p>Url 是目标链接</p>
-<p>Regex 是正则，用于Url页面内容的解析（不知道可以用Xpath不，没研究过，Todo下）</p>
-<p>Deep 是爬虫深度，用于获取分页内容或者其他有深度的请求页面,定义深度防止无限抓取</p>
-<p>Client 是<code>net/http</code>包的自定义client方法（用它主要是能自定义header，一些网站有反爬机制，需要定义header）</p>
-<p>Req 是http.NewRequest主要用于一些设置一些自定义请求</p>
-<p>ResponseBody 顾名思义是请求返回的body体，因为返回内容是<code>[]byte</code>所以是定义为<code>[]byte</code></p>
-<p>Headers 自定义的header头，提供外部定义方法，方便爬取数据</p>
-<p>目前想到的能通用的只有这些了,然后在需要函数具体实现这些：</p>
-<p>1.需要一个SetHeader方法设置Headers</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">func (sp *Spider) setHeader(header map[string]string) &#123;&#125;</span><br></pre></td></tr></table></figure>
-<p>入参用map key-value形式比较适合～</p>
-<p>2.需要一个SetParam方法设置一些基本sp的一些参数</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">func (sp *Spider) SetParam(param map[string]string) &#123;&#125;</span><br></pre></td></tr></table></figure>
-<p>比如修改Url,Deep,Regex,Types这类需要重复赋值的参数</p>
-<p>3.需要一个getContent方法用于获取请求的内容（核心方法）</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">func (sp *Spider) getContent() &#123;&#125;</span><br></pre></td></tr></table></figure>
-<p>4.需要一个Find方法用于正则匹配getContent获取的内容（可以考虑多种方式匹配内容，Todo）</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">func (sp *Spider) Find() []string &#123;&#125;</span><br></pre></td></tr></table></figure>
-<p>5.需要一个Download方法用于保存返回内容（图片啊，网页啊之类的）</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">func (sp *Spider) Download(fileNamePath string, fileTypes string, downloadUrl string, fileName string) string &#123;&#125;</span><br></pre></td></tr></table></figure>
-<p>考虑到要保存的可能不止只有图片，所以就定义下入参，方便灵活下载内容</p>
-<p>所以基本的爬虫方法已经定义好，就差内部具体实现了，具体实现就看代码吧～这里就不贴出来了,这里只记录下要点。</p>
-<ul>
-<li><p>获取到数据后，需要调用 <code>resp.Body.Close()</code> 关闭body</p>
-</li>
-<li><p>使用包 <code>io/ioutil</code> 来获取返回内容 <code>ioutil.ReadAll(resp.Body)</code></p>
-</li>
-<li><p>因为 <code>SetParam</code> 方法定义了入参为 <code>map[string]string</code> 所以 Deep参数不能使用int，需要在 <code>SetParam</code> 使用 <code>strconv.ParseInt()</code> 来string to int</p>
-</li>
-<li><p>正则使用的是 <code>regexp</code> 包，定义好 <code>MustCompile</code> 后 执行 <code>regexp</code> 的 <code>FindAllString</code> 方法</p>
-</li>
-<li><p>下载内容没有定义fileName时，fileName使用的是Unix时间戳,但如果用 go func 可能会遇到文件名称一样的问题，可以加上随机字符串</p>
-</li>
-<li><p>写入文件调用 <code>io/ioutil</code> 的 <code>ioutil.WriteFile</code> </p>
-</li>
-</ul>
-<p>大多数的包可以在 <a href="https://studygolang.com/pkgdoc" target="_blank" rel="noopener">go语言标准库</a> 中找到，而且每个方法都有详细说明，如果调包参数未知可以上这个网站上查看，也可以使用 <a href="http://wiki.jikexueyuan.com/project/go-command-tutorial/0.5.html" target="_blank" rel="noopener">go doc命令</a> 来查看相关命令的文档。</p>
-<h3 id="3-设计目标网站的爬虫"><a href="#3-设计目标网站的爬虫" class="headerlink" title="3.设计目标网站的爬虫"></a>3.设计目标网站的爬虫</h3><p>前面的已经设计了3层，爬虫类也实现了，那么接下来就实现这个qinglv爬虫。</p>
-<p>基本的，为了防止反爬拦截，事先定义下headers:</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">var Url string = &quot;http://www.wxcha.com/touxiang/qinglv/hot_1.html&quot;</span><br><span class="line"></span><br><span class="line">headers := map[string]string&#123;</span><br><span class="line">		&quot;User-Agent&quot;: &quot;Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1&quot;,</span><br><span class="line">		&quot;Referer&quot;: Url,</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
-<p>定义下UA和referer。</p>
-<h4 id="3-1-按深度获取分页下的页面链接"><a href="#3-1-按深度获取分页下的页面链接" class="headerlink" title="3.1 按深度获取分页下的页面链接"></a>3.1 按深度获取分页下的页面链接</h4><p>根据第一页，获取所有符合正则条件的页面链接,核心代码如下：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">resp := sp.Find()</span><br><span class="line">result := resp</span><br><span class="line">if len(resp) &gt; 0 &#123;</span><br><span class="line">	//有数据才继续</span><br><span class="line">	i := sp.Deep</span><br><span class="line">	var flag int64 = 0</span><br><span class="line">	maxFor := len(resp)</span><br><span class="line">	forLen := 0</span><br><span class="line">	for flag &lt; i &#123;</span><br><span class="line">		flag++</span><br><span class="line">		for len(resp) &gt; 0 &amp;&amp; forLen &lt;= maxFor &#123;</span><br><span class="line">			target := resp[0]</span><br><span class="line">			if readySearch[target] == 0 &#123;</span><br><span class="line">				readySearch[target] = 1</span><br><span class="line">				sp.Url = target</span><br><span class="line">				resp = resp[1 : len(resp)]</span><br><span class="line">				_resp := sp.Find()</span><br><span class="line">				resp = append(resp, _resp...)</span><br><span class="line">				result = append(result, _resp...)</span><br><span class="line">			&#125; else &#123;</span><br><span class="line">				resp = resp[1 : len(resp)]</span><br><span class="line">			&#125;</span><br><span class="line">			forLen++</span><br><span class="line">		&#125;</span><br><span class="line">		forLen = 0 </span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>获取到第一条页面的所有内容后，再for循环获取resp下所有页面链接下的分页链接，并去重，深度需要自己实现，这里比较简单暴力，根据第一次获取的结果的长度作为深度标志，循环获取的结果长度超过这个长度就进行下一深度循环，虽然会获取重复数据，但本人也没有更好的解决方法，就简单的实现下了。</p>
-<p>去重方法：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">   //去重 想下是否可以想个办法简化这个去重</span><br><span class="line">var finalResultMap map[string]int</span><br><span class="line">finalResultMap = make(map[string]int)</span><br><span class="line">for _, v := range result &#123;</span><br><span class="line">	finalResultMap[v] = 1</span><br><span class="line">&#125;</span><br><span class="line">var finalResultSlice []string</span><br><span class="line">for k, _ := range finalResultMap &#123;</span><br><span class="line">	finalResultSlice = append(finalResultSlice, k)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>去重方法度娘谷歌没有好的解决方案，就临时实现下了。</p>
-<h4 id="3-2-根据前面获取的链接slice获取详情页的链接"><a href="#3-2-根据前面获取的链接slice获取详情页的链接" class="headerlink" title="3.2 根据前面获取的链接slice获取详情页的链接"></a>3.2 根据前面获取的链接slice获取详情页的链接</h4><p>获取3.1的链接后，获取详情页的链接，方法与3.1雷同，只是变更了正则。</p>
-<h4 id="3-3-最后一步根据详情页获取图片地址并下载"><a href="#3-3-最后一步根据详情页获取图片地址并下载" class="headerlink" title="3.3 最后一步根据详情页获取图片地址并下载"></a>3.3 最后一步根据详情页获取图片地址并下载</h4><p>在3.2的基础上，获取到图片链接后，调用 <code>sp.Download()</code> 下载图片</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">func DownloadImg()&#123;</span><br><span class="line">	fmt.Printf(&quot;开始下载图片...\n&quot;)</span><br><span class="line">	var downLoadFile string = &quot;/Users/lins/Desktop/spider/&quot;</span><br><span class="line">	var param map[string]string</span><br><span class="line">	param = make(map[string]string)</span><br><span class="line">	param[&quot;Regex&quot;] = `http://img.wxcha.com/file/\d+/\d+/\w+.jpg`</span><br><span class="line">	param[&quot;Types&quot;] = &quot;get&quot;</span><br><span class="line">	sp := &amp;lsp.Spider&#123;&#125;</span><br><span class="line">	headers := map[string]string&#123;</span><br><span class="line">		&quot;User-Agent&quot;: &quot;Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1&quot;,</span><br><span class="line">		&quot;Referer&quot;: Url,</span><br><span class="line">	&#125;</span><br><span class="line">	lsp.SetHeaders(headers)</span><br><span class="line">	sp.SetParam(param)</span><br><span class="line">	var result []string</span><br><span class="line">	detailUrls := GetDetailUrls()</span><br><span class="line">	for _,v := range detailUrls &#123;</span><br><span class="line">		sp.Url = v</span><br><span class="line">		resp := sp.Find()</span><br><span class="line">		result = append(result, resp...)</span><br><span class="line">	&#125;</span><br><span class="line">	//去重 想下是否可以想个办法简化这个去重</span><br><span class="line">	var finalResultMap map[string]int</span><br><span class="line">	finalResultMap = make(map[string]int)</span><br><span class="line">	for _, v := range result &#123;</span><br><span class="line">		finalResultMap[v] = 1</span><br><span class="line">	&#125;</span><br><span class="line">	var finalResultSlice []string</span><br><span class="line">	for k, _ := range finalResultMap &#123;</span><br><span class="line">		downLoadPath := sp.Download(downLoadFile, &quot;jpg&quot;, k, &quot;&quot;)</span><br><span class="line">		if downLoadPath == &quot;&quot; &#123;</span><br><span class="line">			continue</span><br><span class="line">		&#125;</span><br><span class="line">		fmt.Printf(&quot;result %s\n&quot;, downLoadPath)</span><br><span class="line">		finalResultSlice = append(finalResultSlice, downLoadPath)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h3 id="4-调用DownloadImg下载"><a href="#4-调用DownloadImg下载" class="headerlink" title="4.调用DownloadImg下载"></a>4.调用DownloadImg下载</h3><p>以上都写好后就在main 中调用DownloadImg 设置deep = 1, 命令行 cd 到 mian.go <code>go run main.go</code> 启动下载。经过十多分钟的疯狂输出终于下好了，1深度就下了5000+,刺激</p>
-<p><img src="https://0d077ef9e74d8.cdn.sohucs.com/rkvJVcv_png" alt="下载图片" title="[下载图片]"></p>
-<p><img src="https://ae01.alicdn.com/kf/HTB1DW5yLHvpK1RjSZPi762mwXXaE.png" alt="下载内容简介" title="[下载数据]"></p>
-<p>至此，go初体验之爬取情侣头像就到这里结束啦，虽然有个bug在于找不到情侣头像的对应（希望别被女票打死）,但是这个过程还是对Golang这个语言有了很大程度的理解，收获满满，<br>总结下这次爬取的Coding之旅：</p>
-<ul>
-<li>一定要注意类型！！！！PHP弱类型的通病让我突然”强迫症”式地用强类型就遇到好多次的类型异常；</li>
-<li>还有就是 map定义没赋值 记得用之前make一下哦～</li>
-<li>go的标准包还是很nice的，要用的时候多翻翻文档哦</li>
-<li>go官网的tour很棒，可以一边看文档一边coding(慕课网的golang 基础课也有)</li>
-<li>go还有很多牛逼的特性，是PHP这类脚本型语言所不能及的，计划以后coding一波</li>
-</ul>
-<p>本项目代码地址: <a href="https://github.com/LinsVert/Golang" target="_blank" rel="noopener">https://github.com/LinsVert/Golang</a></p>
-<p>以上。</p>
-<p><img src="https://ae01.alicdn.com/kf/HTB16diELNTpK1RjSZFMq6zG_VXaD.jpg" alt="溜了"></p>
-<h4 id="本人博客-：-博客"><a href="#本人博客-：-博客" class="headerlink" title="本人博客 ： 博客"></a>本人博客 ： <a href="blog.lindebiao.top">博客</a></h4><h4 id="本人GayHub-Github-欢迎Start-Follow"><a href="#本人GayHub-Github-欢迎Start-Follow" class="headerlink" title="本人GayHub : Github 欢迎Start Follow!"></a>本人GayHub : <a href="https://github.com/LinsVert" target="_blank" rel="noopener">Github</a> 欢迎Start Follow!</h4>
-          
+          最近有想转golang的想法，所以抽了点时间学习了一波golang的基本语法，感觉上这个静态解析语言用起来的确没有php那么舒服，但感觉上用起来还是很爽的。刚好女票要换个情侣头像,那就用Go爬一波情侣头像吧～Let’s Code
+本次使用的工具123golang go1.11.4编辑器 vscode
+          ...
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2019/03/09/GO初体验之爬取情侣头像/#more" rel="contents">
+              Read more &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
         
       
     </div>
@@ -550,8 +468,15 @@
       
         
           
-            <h3 id="个人简历"><a href="#个人简历" class="headerlink" title="个人简历"></a>个人简历</h3><h3 id="基本信息"><a href="#基本信息" class="headerlink" title="基本信息"></a>基本信息</h3><h5 id="姓名：林德标-出生年月：-1994-12"><a href="#姓名：林德标-出生年月：-1994-12" class="headerlink" title="姓名：林德标        出生年月： 1994.12"></a>姓名：林德标        出生年月： 1994.12</h5><h5 id="工作经验：-2年-毕业院校：中国计量大学（本科）"><a href="#工作经验：-2年-毕业院校：中国计量大学（本科）" class="headerlink" title="工作经验： 2年        毕业院校：中国计量大学（本科）"></a>工作经验： 2年        毕业院校：中国计量大学（本科）</h5><h5 id="联系方式：15168272264-邮箱：lindebiaoldb-gmail-com"><a href="#联系方式：15168272264-邮箱：lindebiaoldb-gmail-com" class="headerlink" title="联系方式：15168272264        邮箱：lindebiaoldb@gmail.com"></a>联系方式：15168272264        邮箱：<a href="mailto:lindebiaoldb@gmail.com" target="_blank" rel="noopener">lindebiaoldb@gmail.com</a></h5><h3 id="求职意向"><a href="#求职意向" class="headerlink" title="求职意向"></a>求职意向</h3><h5 id="从事职业-PHP开发-期望薪资：-12K～15K"><a href="#从事职业-PHP开发-期望薪资：-12K～15K" class="headerlink" title="从事职业: PHP开发     期望薪资： 12K～15K"></a>从事职业: PHP开发     期望薪资： 12K～15K</h5><h3 id="工作经历"><a href="#工作经历" class="headerlink" title="工作经历"></a>工作经历</h3><h5 id="公司名称：杭州微拍堂文化创意有限公司-职位名称：-业务支持-amp-PHP开发-在职时间：2017-12-至今"><a href="#公司名称：杭州微拍堂文化创意有限公司-职位名称：-业务支持-amp-PHP开发-在职时间：2017-12-至今" class="headerlink" title="公司名称：杭州微拍堂文化创意有限公司    职位名称： 业务支持&amp;PHP开发        在职时间：2017.12 - 至今"></a>公司名称：杭州微拍堂文化创意有限公司    职位名称： 业务支持&amp;PHP开发        在职时间：2017.12 - 至今</h5><h5 id="工作描述："><a href="#工作描述：" class="headerlink" title="工作描述："></a>工作描述：</h5><h5 id="1-主要负责客服技术上的解答与处理"><a href="#1-主要负责客服技术上的解答与处理" class="headerlink" title="1.主要负责客服技术上的解答与处理"></a>1.主要负责客服技术上的解答与处理</h5><h6 id="主要负责处理客服（客户）技术上的问题，以及对问题的及时解答与处理修复，线上bug及时定位与相关负责人呢对接处理，以及对一些数据的处理修复与代码兼容工作；以及对客服"><a href="#主要负责处理客服（客户）技术上的问题，以及对问题的及时解答与处理修复，线上bug及时定位与相关负责人呢对接处理，以及对一些数据的处理修复与代码兼容工作；以及对客服" class="headerlink" title="主要负责处理客服（客户）技术上的问题，以及对问题的及时解答与处理修复，线上bug及时定位与相关负责人呢对接处理，以及对一些数据的处理修复与代码兼容工作；以及对客服"></a>主要负责处理客服（客户）技术上的问题，以及对问题的及时解答与处理修复，线上bug及时定位与相关负责人呢对接处理，以及对一些数据的处理修复与代码兼容工作；以及对客服</h6><h6 id="反馈问题的总结与梳理，将频繁咨询问题自驱迭代成查询项目，以及对一些设计上不合理的地方及时反馈处理以及推送产品的优化迭代，项目进度的核实与反馈等。"><a href="#反馈问题的总结与梳理，将频繁咨询问题自驱迭代成查询项目，以及对一些设计上不合理的地方及时反馈处理以及推送产品的优化迭代，项目进度的核实与反馈等。" class="headerlink" title="反馈问题的总结与梳理，将频繁咨询问题自驱迭代成查询项目，以及对一些设计上不合理的地方及时反馈处理以及推送产品的优化迭代，项目进度的核实与反馈等。"></a>反馈问题的总结与梳理，将频繁咨询问题自驱迭代成查询项目，以及对一些设计上不合理的地方及时反馈处理以及推送产品的优化迭代，项目进度的核实与反馈等。</h6><h5 id="2-主要负责新老后台的迁移工作"><a href="#2-主要负责新老后台的迁移工作" class="headerlink" title="2.主要负责新老后台的迁移工作"></a>2.主要负责新老后台的迁移工作</h5><h6 id="主要负责老后台（ci）迁移到新后台，废弃老的冗余且不优雅的ci代码，并且自驱迭代一些小项目，以及根据迁移计划迭代迁移老后台项目，本人主要负责其中的迁移工作以及担负部分项目的PO"><a href="#主要负责老后台（ci）迁移到新后台，废弃老的冗余且不优雅的ci代码，并且自驱迭代一些小项目，以及根据迁移计划迭代迁移老后台项目，本人主要负责其中的迁移工作以及担负部分项目的PO" class="headerlink" title="主要负责老后台（ci）迁移到新后台，废弃老的冗余且不优雅的ci代码，并且自驱迭代一些小项目，以及根据迁移计划迭代迁移老后台项目，本人主要负责其中的迁移工作以及担负部分项目的PO"></a>主要负责老后台（ci）迁移到新后台，废弃老的冗余且不优雅的ci代码，并且自驱迭代一些小项目，以及根据迁移计划迭代迁移老后台项目，本人主要负责其中的迁移工作以及担负部分项目的PO</h6><h5 id="3-负责一些新后台功能的迭代开发"><a href="#3-负责一些新后台功能的迭代开发" class="headerlink" title="3.负责一些新后台功能的迭代开发"></a>3.负责一些新后台功能的迭代开发</h5><h6 id="3-1-负责一些新功能的后台接口开发，编写相关mock接口，根据DBA规范编写新项目一些后台数据库SQL"><a href="#3-1-负责一些新功能的后台接口开发，编写相关mock接口，根据DBA规范编写新项目一些后台数据库SQL" class="headerlink" title="3.1 负责一些新功能的后台接口开发，编写相关mock接口，根据DBA规范编写新项目一些后台数据库SQL"></a>3.1 负责一些新功能的后台接口开发，编写相关mock接口，根据DBA规范编写新项目一些后台数据库SQL</h6><h6 id="3-2-负责提供一些查询功能的接口（自驱）"><a href="#3-2-负责提供一些查询功能的接口（自驱）" class="headerlink" title="3.2 负责提供一些查询功能的接口（自驱）"></a>3.2 负责提供一些查询功能的接口（自驱）</h6><h5 id="公司名称：-杭州萌橙科技有限公司-职位名称：-PHP开发-在职时间：2017-03-2017-11"><a href="#公司名称：-杭州萌橙科技有限公司-职位名称：-PHP开发-在职时间：2017-03-2017-11" class="headerlink" title="公司名称： 杭州萌橙科技有限公司    职位名称： PHP开发    在职时间：2017.03 - 2017.11"></a>公司名称： 杭州萌橙科技有限公司    职位名称： PHP开发    在职时间：2017.03 - 2017.11</h5><h5 id="工作描述：-1"><a href="#工作描述：-1" class="headerlink" title="工作描述："></a>工作描述：</h5><h6 id="1-后台开发的主要负责人，负责公司项目所有的后台开发工作，以及相关接口的规范定义以及接口文档的编辑修改工作。"><a href="#1-后台开发的主要负责人，负责公司项目所有的后台开发工作，以及相关接口的规范定义以及接口文档的编辑修改工作。" class="headerlink" title="1.后台开发的主要负责人，负责公司项目所有的后台开发工作，以及相关接口的规范定义以及接口文档的编辑修改工作。"></a>1.后台开发的主要负责人，负责公司项目所有的后台开发工作，以及相关接口的规范定义以及接口文档的编辑修改工作。</h6><h6 id="2-主要负责板川项目的后台工作"><a href="#2-主要负责板川项目的后台工作" class="headerlink" title="2.主要负责板川项目的后台工作"></a>2.主要负责板川项目的后台工作</h6><h6 id="2-1-接口开发-数据库编写"><a href="#2-1-接口开发-数据库编写" class="headerlink" title="2.1 接口开发 数据库编写"></a>2.1 接口开发 数据库编写</h6><h6 id="2-2-权限系统的功能开发"><a href="#2-2-权限系统的功能开发" class="headerlink" title="2.2 权限系统的功能开发"></a>2.2 权限系统的功能开发</h6><h6 id="2-3-多端联调"><a href="#2-3-多端联调" class="headerlink" title="2.3 多端联调"></a>2.3 多端联调</h6><h6 id="3-主要负责集成灶的接口开发"><a href="#3-主要负责集成灶的接口开发" class="headerlink" title="3. 主要负责集成灶的接口开发"></a>3. 主要负责集成灶的接口开发</h6><h6 id="3-1-主要负责网上商城的二次迭代"><a href="#3-1-主要负责网上商城的二次迭代" class="headerlink" title="3.1 主要负责网上商城的二次迭代"></a>3.1 主要负责网上商城的二次迭代</h6><h6 id="3-2-主要负责多端的服务端控制系统的实现"><a href="#3-2-主要负责多端的服务端控制系统的实现" class="headerlink" title="3.2 主要负责多端的服务端控制系统的实现"></a>3.2 主要负责多端的服务端控制系统的实现</h6><h6 id="3-3-主要负责多端接入权限系统的开发"><a href="#3-3-主要负责多端接入权限系统的开发" class="headerlink" title="3.3 主要负责多端接入权限系统的开发"></a>3.3 主要负责多端接入权限系统的开发</h6><h6 id="4-主要负责阅卷助手、微考试的迭代开发"><a href="#4-主要负责阅卷助手、微考试的迭代开发" class="headerlink" title="4.主要负责阅卷助手、微考试的迭代开发"></a>4.主要负责阅卷助手、微考试的迭代开发</h6><h6 id="4-1主要负责相关接口的开发"><a href="#4-1主要负责相关接口的开发" class="headerlink" title="4.1主要负责相关接口的开发"></a>4.1主要负责相关接口的开发</h6><h6 id="4-2-1期已上线项目的维护与bug修复"><a href="#4-2-1期已上线项目的维护与bug修复" class="headerlink" title="4.2 1期已上线项目的维护与bug修复"></a>4.2 1期已上线项目的维护与bug修复</h6><h6 id="5-一些已上线项目的代码维护和bug修复"><a href="#5-一些已上线项目的代码维护和bug修复" class="headerlink" title="5.一些已上线项目的代码维护和bug修复"></a>5.一些已上线项目的代码维护和bug修复</h6><h3 id="自我评价"><a href="#自我评价" class="headerlink" title="自我评价"></a>自我评价</h3><h5 id="三人行必有我师，只有不断的进步学习才能懂得更多，收获才能更多。"><a href="#三人行必有我师，只有不断的进步学习才能懂得更多，收获才能更多。" class="headerlink" title="三人行必有我师，只有不断的进步学习才能懂得更多，收获才能更多。"></a>三人行必有我师，只有不断的进步学习才能懂得更多，收获才能更多。</h5>
-          
+          个人简历基本信息姓名：林德标        出生年月： 1994.12工作经验： 2年        毕业院校：中国计量大学（本科）联系方式：15168272264        邮箱：lindebiaoldb@gmail.com求职意向从事职业: PHP开发     期望薪资： 12K～15K工作
+          ...
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2019/03/04/个人简历/#more" rel="contents">
+              Read more &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
         
       
     </div>
@@ -669,30 +594,16 @@
       
         
           
-            <p>之前逛掘金帖子的时候，发现一个群的群主拿Python刷了他在某个博客的阅读量，今天我也用世界上最好的语言 : ) PHP来 刷一刷某站点的阅读量。</p>
-<p>框架用的是 <a href="https://github.com/owner888/phpspider" target="_blank" rel="noopener">PHPSpider</a>一个比较轻量的爬虫框架。本爬虫主要用了其中的 <code>request库</code> 和 <code>selector库</code>。想要了解这个框架的可以链过去看看。</p>
-<h6 id="进入正题："><a href="#进入正题：" class="headerlink" title="进入正题："></a>进入正题：</h6><p>1.瞎几把分析一波：进入文章详情页，刷新几遍，发现阅读量上去了，说明刷阅读量方法可行。<br><img src="https://upload-images.jianshu.io/upload_images/7393873-44261b7a2aaf10db.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/520" alt="第一次"><br><img src="https://upload-images.jianshu.io/upload_images/7393873-24d4fad4ea0777cc.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/520" alt="第三次"></p>
-<p>2.先直接访问文章详情页</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">include __DIR__.&quot;/../autoloader.php&quot;;</span><br><span class="line">use spider\core\requests;</span><br><span class="line">$url = &quot;https://www.jianshu.com/p/26c2eca28dc5&quot;;</span><br><span class="line">$html = requests::get($url);//简单的get</span><br></pre></td></tr></table></figure>
-<p>php cli 之，然后刷新页面，发现没增加次数，说明肯定存在某种方式的验证。万金油先加<code>referer header</code></p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">include __DIR__.&quot;/../autoloader.php&quot;;</span><br><span class="line">use spider\core\requests;</span><br><span class="line">$url = &quot;https://www.jianshu.com/p/26c2eca28dc5&quot;;</span><br><span class="line">$referer = &quot;https://www.jianshu.com&quot;;</span><br><span class="line">requests::set_referer($referer);</span><br><span class="line">$html = requests::get($url);//简单的get</span><br></pre></td></tr></table></figure>
-<p>cli然后刷新，还是没用，那就再复制这个页面的 <code>cookie</code></p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">include __DIR__.&quot;/../autoloader.php&quot;;</span><br><span class="line">use spider\core\requests;</span><br><span class="line">$url = &quot;https://www.jianshu.com/p/26c2eca28dc5&quot;;</span><br><span class="line">$referer = &quot;https://www.jianshu.com&quot;;</span><br><span class="line">$cookie = &quot;自己复制，太长就不贴了&quot;</span><br><span class="line">requests::set_referer($referer);</span><br><span class="line">requests::set_cookie($referer,$cookie);</span><br><span class="line">$html = requests::get($url);//简单的get</span><br></pre></td></tr></table></figure>
-<p>发现还是没用，难道是<code>userAgent</code>?加了发现还是不行，那么就可能存在JS动态获取阅读量的可能。F12一波，看下<code>XHR</code>,这个<code>mark_viewd.json</code>明显就是加阅读量的方法了,看了下返回204，not data，说明阅读量是下次刷新生效。<br><img src="https://upload-images.jianshu.io/upload_images/7393873-b8f629fb87ee4000.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/520" alt="增加阅读量的请求"><br>请求内容：<br><img src="https://upload-images.jianshu.io/upload_images/7393873-da85b3d69d924f36.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/520" alt="请求体"></p>
-<p>找波规律：<br>1.请求的url中有该文章的关键字<br>2.post 有个奇怪的uuid和 referer<br>说明请求的url <code>notes/</code>后跟的是这个文章的资源ID；至于uuid发现其他AJAX请求没有给到这个值，极有可能是事先渲染好的，果断在Elements 中Ctrl+F一波<br><img src="https://upload-images.jianshu.io/upload_images/7393873-82ecbc67e0b7e471.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/520" alt="文章页中的uuid"><br>发现文章详情页的Script 有个JSON包含这个uuid,那么逻辑就可以理顺了，先验证是否是这个请求增加阅读量的。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">$url = &quot;https://www.jianshu.com/notes/5764256f0c43/mark_viewed.json&quot;;</span><br><span class="line">$referer = &quot;https://www.jianshu.com/p/5764256f0c43&quot;;</span><br><span class="line">requests::set_referer($referer);//必须将referer调成当前页面</span><br><span class="line">$data = [</span><br><span class="line">&quot;uuid&quot;=&gt;&quot;912e01f5-6da4-4bfd-8e71-4d1b62499709&quot;,</span><br><span class="line">&quot;referer&quot;=&gt;&quot;https://www.jianshu.com/&quot;</span><br><span class="line">];</span><br><span class="line">requests::post($url,json_encode($data));</span><br></pre></td></tr></table></figure>
-<p>执行之后发现次数增加了，需要注意的是 <code>request::referer() 请求体referer</code> 要设置成该页面的值，不然不会加阅读量，设置成<code>www.jianshu.com</code>我没测试。</p>
-<p>那么接下来就是撸波代码,用上多进程同时刷我自己的其他文章：</p>
-<h6 id="Code"><a href="#Code" class="headerlink" title="Code"></a>Code</h6><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line">/**</span><br><span class="line"> * Created by PhpStorm.</span><br><span class="line"> * User: lins</span><br><span class="line"> * Date: 14/05/2018</span><br><span class="line"> * Time: 11:26 PM</span><br><span class="line"> */</span><br><span class="line"></span><br><span class="line">//简书 刷阅读量</span><br><span class="line">include __DIR__.&quot;/../autoloader.php&quot;;</span><br><span class="line">use spider\core\requests;</span><br><span class="line">use spider\core\selector;</span><br><span class="line"></span><br><span class="line">$url = &quot;https://www.jianshu.com/u/6b1fa1764b51&quot;;</span><br><span class="line">$referer = &quot;https://www.jianshu.com&quot;;</span><br><span class="line">$urll = &quot;https://www.jianshu.com/p/26c2eca28dc5&quot;;</span><br><span class="line">$userAgent = &quot;Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36&quot;;</span><br><span class="line">$cookie = &quot;_ga=GA1.2.1446998420.1512720610; read_mode=day; default_font=font2; locale=zh-CN; web-note-ad-fixed=1524537468387; Hm_lvt_0c0e9d9b1e7d617b3e6842e85b9fb068=1526200190,1526220098,1526282339,1526312631; sensorsdata2015jssdkcross=%7B%22distinct_id%22%3A%22160352cb5d7300-071265b68a5aa1-17396d57-1296000-160352cb5d8d37%22%2C%22%24device_id%22%3A%22160352cb5d7300-071265b68a5aa1-17396d57-1296000-160352cb5d8d37%22%2C%22props%22%3A%7B%22%24latest_traffic_source_type%22%3A%22%E8%87%AA%E7%84%B6%E6%90%9C%E7%B4%A2%E6%B5%81%E9%87%8F%22%2C%22%24latest_referrer%22%3A%22https%3A%2F%2Fwww.google.co.jp%2F%22%2C%22%24latest_referrer_host%22%3A%22www.google.co.jp%22%2C%22%24latest_search_keyword%22%3A%22%E6%9C%AA%E5%8F%96%E5%88%B0%E5%80%BC%22%2C%22%24latest_utm_source%22%3A%22desktop%22%2C%22%24latest_utm_medium%22%3A%22not-signed-in-like-button%22%2C%22%24latest_utm_campaign%22%3A%22maleskine%22%2C%22%24latest_utm_content%22%3A%22note%22%7D%2C%22first_id%22%3A%22%22%7D; _m7e_session=9cfeba4267a7645d2058d2a971670be3; signin_redirect=https%3A%2F%2Fwww.jianshu.com%2Fp%2F26c2eca28dc5; Hm_lpvt_0c0e9d9b1e7d617b3e6842e85b9fb068=1526391092&quot;;</span><br><span class="line">requests::set_referer($referer);</span><br><span class="line"></span><br><span class="line">requests::set_cookie($referer,$cookie);</span><br><span class="line"></span><br><span class="line">requests::set_useragent($userAgent);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">$html = requests::get($url);</span><br><span class="line"></span><br><span class="line">$result = selector::select($html,&apos;//div[@class=&quot;content&quot;]/a/@href&apos;);//选择器拿到用户下的所有文章</span><br><span class="line"></span><br><span class="line">$result = array_map(function ($e)use($referer)&#123;</span><br><span class="line">    $word = explode(&apos;/&apos;,$e);//word关键词用来拼接json</span><br><span class="line">    $word = $word[2];</span><br><span class="line">    $ref = $referer.$e;//文章地址</span><br><span class="line">    return [&apos;word&apos;=&gt;$word,&apos;referer&apos;=&gt;$ref];</span><br><span class="line">&#125;,(array)$result);</span><br><span class="line"></span><br><span class="line">//玩下fork</span><br><span class="line"></span><br><span class="line">$num = 4;</span><br><span class="line">$runTimes = 7200;</span><br><span class="line">if(count($result) &lt; $num)&#123;</span><br><span class="line">    $num = count($result);</span><br><span class="line">&#125;</span><br><span class="line">var_dump($num);</span><br><span class="line">for ($i = 0;$i&lt;$num;$i++)&#123;</span><br><span class="line"></span><br><span class="line">    $pid = pcntl_fork();</span><br><span class="line">    if(0 &lt; $pid)&#123;</span><br><span class="line">        //father</span><br><span class="line">        //准备回收</span><br><span class="line">        pcntl_signal(SIGCHLD,function() use( $pid ) &#123;</span><br><span class="line">            echo &quot;收到子进程退出&quot;.PHP_EOL;</span><br><span class="line">            pcntl_waitpid( $pid, $status, WNOHANG );</span><br><span class="line">        &#125;);</span><br><span class="line">//        pcntl_alarm(1);</span><br><span class="line">        pcntl_signal_dispatch();</span><br><span class="line"></span><br><span class="line">    &#125;elseif(0 == $pid)&#123;</span><br><span class="line">        $time = time() + $runTimes;</span><br><span class="line">        while(time() &lt; $time)&#123;</span><br><span class="line">            $url = toSee($i,$result,$num);</span><br><span class="line">            file_put_contents(&apos;debug.json&apos;,json_encode($url).PHP_EOL,FILE_APPEND);</span><br><span class="line"></span><br><span class="line">            sleep(rand(1,5));</span><br><span class="line">        &#125;</span><br><span class="line">        echo $pid.&quot;*$i run finished &quot;.date(&apos;Y-m-d H:i:s&apos;).PHP_EOL;</span><br><span class="line">        exit;</span><br><span class="line">    &#125;else &#123;</span><br><span class="line">        echo &apos;fork error&apos;;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">function toSee(int $i,array $result,int $num)&#123;</span><br><span class="line">    $referer = &quot;https://www.jianshu.com/u/6b1fa1764b51&quot;;</span><br><span class="line">    $url = [];</span><br><span class="line">    $reNums = count($result);</span><br><span class="line">    //将抓到的文章资源平均分配到子进程中</span><br><span class="line">    if ($reNums == $num)&#123;</span><br><span class="line">        $url[] = $result[$i];</span><br><span class="line">    &#125;else &#123;</span><br><span class="line">        do&#123;</span><br><span class="line">            $url[] = $result[$i];</span><br><span class="line">            $i = $i+$num;</span><br><span class="line">        &#125;while(isset($result[$i]));</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">    foreach ($url as $key) &#123;</span><br><span class="line">        $ulas = &quot;https://www.jianshu.com/notes/%s/mark_viewed.json&quot;;</span><br><span class="line">        $res = requests::get($key[&apos;referer&apos;]);//拿到文章详情页</span><br><span class="line"></span><br><span class="line">        $path = &quot;/html/body/script[1]/text()&quot;;</span><br><span class="line"></span><br><span class="line">        $ress = selector::select($res,$path);//拿到script 下的json</span><br><span class="line">        $ress = json_decode($ress);</span><br><span class="line"></span><br><span class="line">        $data = [</span><br><span class="line">            &quot;referer&quot; =&gt; $referer,//这个值好像随意是jianshu的域名就可以</span><br><span class="line">            &apos;uuid&apos; =&gt; $ress-&gt;note_show-&gt;uuid</span><br><span class="line">        ];</span><br><span class="line">        $ulas = sprintf($ulas,$key[&apos;word&apos;]);</span><br><span class="line">        echo $ulas.PHP_EOL;</span><br><span class="line">        requests::set_referer($key[&apos;referer&apos;]);//必须将referer调成当前页面</span><br><span class="line">        requests::post($ulas,json_encode($data));</span><br><span class="line">    </span><br><span class="line">    &#125;</span><br><span class="line">    return $url;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>本文用的抓取语法是<a href="http://www.w3school.com.cn/xpath/xpath_syntax.asp" target="_blank" rel="noopener">XPATH</a>有兴趣的可以了解下。<br>保存，然后丢到服务器，开个定时脚本跑，大功告成。</p>
-<p>PS:这段代码请放在项目的demo文件夹里，然后<code>php 文件名.php</code>就可以了。</p>
-<p>值得注意的是，有些*unix服务器 <code>curl</code> 是 nss 方式 请求ssl的 pctnl_frok的时候会报错，需要将curl 请求ssl的nss 变为 openssl,方法如下:</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">先yum update openssl</span><br><span class="line"></span><br><span class="line">再yum update curl</span><br><span class="line"></span><br><span class="line">curl -V</span><br></pre></td></tr></table></figure>
-<p>如果不是下面的 openssl<br><img src="https://upload-images.jianshu.io/upload_images/7393873-56b30ad8a587c043.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/520" alt="curl -V"><br>那就看下这个链接吧，<br><a href="https://www.cnblogs.com/showker/p/4706271.html" target="_blank" rel="noopener">https://www.cnblogs.com/showker/p/4706271.html</a></p>
-<p>以上。<br>撒花。:)<br>小刷怡情，大刷伤身。</p>
-<p>2018-05-20 22:27 更新 ，因为会被jianshu大佬ban Ip 所以我另外写了爬虫抓取免费的ip代理，相关更新代码和更新版本请异步小弟的  <a href="https://github.com/LinsVert/Spider" target="_blank" rel="noopener">GayHub</a></p>
-
-          
+          之前逛掘金帖子的时候，发现一个群的群主拿Python刷了他在某个博客的阅读量，今天我也用世界上最好的语言 : ) PHP来 刷一刷某站点的阅读量。
+框架用的是 PHPSpider一个比较轻量的爬虫框架。本爬虫主要用了其中的 request库 和 selector库。想要了解这个框架的可以链过去看看。
+          ...
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2019/03/04/我用PHP刷某站的阅读量/#more" rel="contents">
+              Read more &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
         
       
     </div>
@@ -810,68 +721,18 @@
       
         
           
-            <h6 id="ps-原文来自简书后续将会同步更新"><a href="#ps-原文来自简书后续将会同步更新" class="headerlink" title="ps: 原文来自简书后续将会同步更新"></a>ps: 原文来自简书后续将会同步更新</h6><h1 id="1-Two-Sums"><a href="#1-Two-Sums" class="headerlink" title="1.Two Sums"></a>1.Two Sums</h1><ul>
-<li><p>Given an array of integers, return indices of the two numbers such that they add up to a specific target.</p>
-</li>
-<li><p>You may assume that each input would have exactly one solution, and you may not use the same element twice.</p>
-</li>
-</ul>
-<h6 id="Example"><a href="#Example" class="headerlink" title="Example:"></a>Example:</h6><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Given nums = [2, 7, 11, 15], target = 9,</span><br><span class="line"></span><br><span class="line">Because nums[0] + nums[1] = 2 + 7 = 9,</span><br><span class="line">return [0, 1].</span><br><span class="line">`</span><br></pre></td></tr></table></figure>
-<h6 id="Code"><a href="#Code" class="headerlink" title="Code:"></a>Code:</h6><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">javascript:</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * @param &#123;number[]&#125; nums</span><br><span class="line"> * @param &#123;number&#125; target</span><br><span class="line"> * @return &#123;number[]&#125;</span><br><span class="line"> */</span><br><span class="line">var twoSum = function(nums, target) &#123;</span><br><span class="line">    var len = nums.length;</span><br><span class="line">    var ar = [];</span><br><span class="line">    var tmp = 0;</span><br><span class="line">    for(var i = 0;i&lt;len;i++)&#123;</span><br><span class="line">        tmp = target - nums[i];</span><br><span class="line">        if(ar[tmp] != undefined)&#123;</span><br><span class="line">            return [ar[tmp],i]</span><br><span class="line">        &#125;</span><br><span class="line">        ar[nums[i]] = i;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-<h6 id="Solution"><a href="#Solution" class="headerlink" title="Solution:"></a>Solution:</h6><ul>
-<li>基本思路：array中两数相加，等于一个数，那么可以用个数组来存储已经遍历过的数 index为值 key为下标，target-nums[i]如果新数组存在这个值的index 说明两个数已经找到即[nums[tmp],i]</li>
-</ul>
-<hr>
-<h1 id="2-3SUM"><a href="#2-3SUM" class="headerlink" title="2.3SUM"></a>2.3SUM</h1><ul>
-<li><p>Given an array S of n integers, are there elements a, b, c in S such that a + b + c = 0? Find all unique triplets in the array which gives the sum of zero.</p>
-</li>
-<li><p>Note: The solution set must not contain duplicate triplets.</p>
-</li>
-</ul>
-<h6 id="Example-1"><a href="#Example-1" class="headerlink" title="Example:"></a>Example:</h6><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Given array S = [-1, 0, 1, 2, -1, -4],</span><br><span class="line">A solution set is:</span><br><span class="line">[</span><br><span class="line">  [-1, 0, 1],</span><br><span class="line">  [-1, -1, 2]</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
-<h6 id="Solution-1"><a href="#Solution-1" class="headerlink" title="Solution:"></a>Solution:</h6><ul>
-<li>基本思路: 遍历所有数字，取其3求和，题目要求去重，所以可以先排序将array按大小排好，然后在循环的时候判断上次的值与当前的值是否相等，相等则 ++ 或 – ，因为3重循环会超时（O几不知道），故需要降低时间复杂度，目前是的代码是O(n^2)，将低复杂度的方法是二分法，第二层循环的时候，设置2个下标，start和end 如果和大于0 end – 反之 start ++ 。<h6 id="Code-1"><a href="#Code-1" class="headerlink" title="Code:"></a>Code:</h6><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">JavaScript:</span><br><span class="line">/**</span><br><span class="line"> * @param &#123;number[]&#125; nums</span><br><span class="line"> * @return &#123;number[][]&#125;</span><br><span class="line"> */</span><br><span class="line">var threeSum = function(nums) &#123;</span><br><span class="line">    var res = [];</span><br><span class="line">    </span><br><span class="line">    var len = nums.length;</span><br><span class="line">    </span><br><span class="line">    nums = bubbleSort(nums);//冒泡，排序具体用什么无所谓，自定义</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">    for(var i = 0;i&lt;len-2;)&#123;</span><br><span class="line">        var start = i+1;</span><br><span class="line">        var end = len-1;</span><br><span class="line">        var sum = 0-nums[i];</span><br><span class="line">        while(start&lt;end)&#123;</span><br><span class="line">            if(nums[start] + nums[end] == sum)&#123;</span><br><span class="line">                res.push([nums[i],nums[start],nums[end]]);</span><br><span class="line">                start++;</span><br><span class="line">                while(nums[start] == nums[start-1] &amp;&amp; start&lt;end) start++;</span><br><span class="line">                end--;</span><br><span class="line">                </span><br><span class="line">                while(nums[end] == nums[end+1] &amp;&amp; start&lt;end) end--;</span><br><span class="line">                </span><br><span class="line">            &#125;else if(nums[start] + nums[end] &gt; sum)&#123;</span><br><span class="line">                </span><br><span class="line">                end--;</span><br><span class="line">                while(nums[end] == nums[end+1] &amp;&amp; start&lt;end) end--;</span><br><span class="line">            &#125;else &#123;</span><br><span class="line">                start++;</span><br><span class="line">                while(nums[start] == nums[start-1] &amp;&amp; start&lt;end) start++;</span><br><span class="line">            &#125;</span><br><span class="line">        </span><br><span class="line">    &#125;</span><br><span class="line">        i++;</span><br><span class="line">        while(nums[i] == nums[i-1])i++; </span><br><span class="line">&#125;</span><br><span class="line">    return res;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<h1 id="3-Add-Two-Numbers"><a href="#3-Add-Two-Numbers" class="headerlink" title="3.Add Two Numbers"></a>3.Add Two Numbers</h1><ul>
-<li>You are given two non-empty linked lists representing two non-negative integers. The digits are stored in reverse order and each of their nodes contain a single digit. Add the two numbers and return it as a linked list.</li>
-<li>You may assume the two numbers do not contain any leading zero, except the number 0 itself.<h6 id="Example-2"><a href="#Example-2" class="headerlink" title="Example:"></a>Example:</h6><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Input: (2 -&gt; 4 -&gt; 3) + (5 -&gt; 6 -&gt; 4)</span><br><span class="line">Output: 7 -&gt; 0 -&gt; 8</span><br><span class="line">Explanation: 342 + 465 = 807.</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<h6 id="Solution-2"><a href="#Solution-2" class="headerlink" title="Solution:"></a>Solution:</h6><ul>
-<li>基本思路: 其实用队列比较好实现这个简单的加法，因求和遇十进位，题中数和必然小于 20 则可以用 <code>sum /=10</code> 来获取进位值，那么该进位值可以作为下个求和的参与值。需要注意的是在最后的和中可能会出现 首位和大于10的情况，需要特殊处理，输入的两个ListNode 长度可能会不一样 所以需要考虑到。解法在于用一个队列存储每个node的和并将下个next的node.val定义成该node的余数，进位值在每次 求和前 取得即可。<h6 id="Code-2"><a href="#Code-2" class="headerlink" title="Code:"></a>Code:</h6><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">Java:</span><br><span class="line">/**</span><br><span class="line"> * Definition for singly-linked list.</span><br><span class="line"> * public class ListNode &#123;</span><br><span class="line"> *     int val;</span><br><span class="line"> *     ListNode next;</span><br><span class="line"> *     ListNode(int x) &#123; val = x; &#125;</span><br><span class="line"> * &#125;</span><br><span class="line"> */</span><br><span class="line">class Solution &#123;</span><br><span class="line">    public ListNode addTwoNumbers(ListNode l1, ListNode l2) &#123;</span><br><span class="line">        ListNode p = new ListNode(0);</span><br><span class="line">        ListNode sen = p;//新p 输出用</span><br><span class="line">        int sum = 0;</span><br><span class="line">        while(l1 != null || l2 != null)&#123;</span><br><span class="line">            sum /=10;// 取和的十位</span><br><span class="line">            if(l1 != null)&#123;</span><br><span class="line">                sum +=l1.val;</span><br><span class="line">                l1 = l1.next;</span><br><span class="line">            &#125;</span><br><span class="line">             if(l2 != null)&#123;</span><br><span class="line">                sum +=l2.val;</span><br><span class="line">                l2 = l2.next;</span><br><span class="line">            &#125;</span><br><span class="line">            p.next = new ListNode(sum%10);//余数放到下个node</span><br><span class="line">            p = p.next;</span><br><span class="line">        &#125;</span><br><span class="line">        if(sum-10 &gt;= 0) p.next = new ListNode(1);</span><br><span class="line">        return sen.next;//第一个node没用</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<hr>
-<h1 id="4-Multiply-Strings"><a href="#4-Multiply-Strings" class="headerlink" title="4.Multiply Strings"></a>4.Multiply Strings</h1><ul>
-<li>Given two non-negative integers num1 and num2 represented as strings, return the product of num1 and num2.</li>
-</ul>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Note:</span><br><span class="line"></span><br><span class="line">The length of both num1 and num2 is &lt; 110.</span><br><span class="line">Both num1 and num2 contains only digits 0-9.</span><br><span class="line">Both num1 and num2 does not contain any leading zero.</span><br><span class="line">You must not use any built-in BigInteger library or convert the inputs to integer directly.</span><br></pre></td></tr></table></figure>
-<h6 id="Solution-3"><a href="#Solution-3" class="headerlink" title="Solution:"></a>Solution:</h6><ul>
-<li>基本思路: 不能用 int 字符长度很大，所以 只能是对应位数相乘，然后在对应位置求和。可以将每一位结果存在数组中然后再最后合并。 ps:还有一种方法，二维数组存储数据，将计算结果存在 [i+j,i+j+1]上，角度比较刁钻。<h6 id="Code-3"><a href="#Code-3" class="headerlink" title="Code:"></a>Code:</h6><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line">JavaScript:</span><br><span class="line">/**</span><br><span class="line"> * @param &#123;string&#125; num1</span><br><span class="line"> * @param &#123;string&#125; num2</span><br><span class="line"> * @return &#123;string&#125;</span><br><span class="line"> */</span><br><span class="line">var multiply = function(num1, num2) &#123;</span><br><span class="line">    var len1 = num1.length;</span><br><span class="line">    var len2 = num2.length;</span><br><span class="line">    var res = [];</span><br><span class="line">    var add = 0;</span><br><span class="line">    var index = 0;</span><br><span class="line">    for (var i = 0;i&lt;len1;i++)</span><br><span class="line">        for (var j = 0;j&lt;len2;j++)&#123;</span><br><span class="line">            add = num1[i] * num2[j];</span><br><span class="line">            var ten = Math.floor(add / 10);//拾位</span><br><span class="line">            var dig = add % 10;//个位</span><br><span class="line">            index = len1 - i - 1 + len2 - j - 1;</span><br><span class="line">            if(res[index] == undefined) res[index] = 0;</span><br><span class="line">            res[index] += dig;</span><br><span class="line">            var k = index;//判断加进位</span><br><span class="line">            while(res[k]&gt;=10)&#123;</span><br><span class="line">                var tem = Math.floor(res[k] / 10);</span><br><span class="line">                res[k] = res[k]%10;//取余 其实也可以减去10 个位数相加必然小于20</span><br><span class="line">                res[k+1] = (res[k+1] == undefined) ? tem : tem + res[k+1];</span><br><span class="line">                k++;</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            if(ten != 0 &amp;&amp; res[index+1] == undefined)&#123;</span><br><span class="line">                res[index+1] = ten;</span><br><span class="line">            &#125;else if(ten != 0 )&#123;</span><br><span class="line">                res[index+1] += ten;</span><br><span class="line">                   </span><br><span class="line">            &#125;</span><br><span class="line">            k = index + 1;//判断加进位</span><br><span class="line">                while(res[k]&gt;=10)&#123;</span><br><span class="line">                var tem = Math.floor(res[k] / 10);</span><br><span class="line">                res[k] = res[k]%10;</span><br><span class="line">                res[k+1] = (res[k+1] == undefined) ? tem : tem + res[k+1];</span><br><span class="line">                k++;</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">        &#125;</span><br><span class="line">  </span><br><span class="line">    res.reverse();//逆序</span><br><span class="line">    res = res.join(&apos;&apos;);</span><br><span class="line">    if(res == 0) res = &apos;0&apos;;//判断非 字符&quot;00000&quot;这类数</span><br><span class="line">    return res;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>#5. Roman to Integer</p>
-<ul>
-<li><p>Roman numerals are represented by seven different symbols: I, V, X, L, C, D and M.</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Symbol       Value</span><br><span class="line">I             1</span><br><span class="line">V             5</span><br><span class="line">X             10</span><br><span class="line">L             50</span><br><span class="line">C             100</span><br><span class="line">D             500</span><br><span class="line">M             1000</span><br></pre></td></tr></table></figure>
-<ul>
-<li>For example, two is written as II in Roman numeral, just two one’s added together. Twelve is written as, XII, which is simply X + II. The number twenty seven is written as XXVII, which is XX + V + II.</li>
-</ul>
-</li>
-<li><p>Roman numerals are usually written largest to smallest from left to right. However, the numeral for four is not IIII. Instead, the number four is written as IV. Because the one is before the five we subtract it making four. The same principle applies to the number nine, which is written as IX. There are six instances where subtraction is used:</p>
-<ul>
-<li>I can be placed before V (5) and X (10) to make 4 and 9.<br>X can be placed before L (50) and C (100) to make 40 and 90.<br>C can be placed before D (500) and M (1000) to make 400 and 900.<br>Given a roman numeral, convert it to an integer. Input is guaranteed to be within the range from 1 to 3999.<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">Example 1:</span><br><span class="line"></span><br><span class="line">Input: &quot;III&quot;</span><br><span class="line">Output: 3</span><br><span class="line">Example 2:</span><br><span class="line"></span><br><span class="line">Input: &quot;IV&quot;</span><br><span class="line">Output: 4</span><br><span class="line">Example 3:</span><br><span class="line"></span><br><span class="line">Input: &quot;IX&quot;</span><br><span class="line">Output: 9</span><br><span class="line">Example 4:</span><br><span class="line"></span><br><span class="line">Input: &quot;LVIII&quot;</span><br><span class="line">Output: 58</span><br><span class="line">Explanation: C = 100, L = 50, XXX = 30 and III = 3.</span><br><span class="line">Example 5:</span><br><span class="line"></span><br><span class="line">Input: &quot;MCMXCIV&quot;</span><br><span class="line">Output: 1994</span><br><span class="line">Explanation: M = 1000, CM = 900, XC = 90 and IV = 4.</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-</li>
-</ul>
-<h6 id="Solution-4"><a href="#Solution-4" class="headerlink" title="Solution:"></a>Solution:</h6><ul>
-<li>罗马数字转数字这个相对比较简单，可以说是一道找规律的题目。基本思路： 以”MCMXCIV”为例，第一个M表示1000 CM表示900 = M(1000) - C(100) = 900, XC表示90 = C(100) - X(10) = 90 IV 表示4 = V(5) - I(1) = 4 所以”MCMXCIV” = 1000(M) + 900(CM) + 90(XC) + 4(IV) = 1994,简单地理解就是 CM = M - C ，所以就可以按这个思路coding了<h5 id="Code-4"><a href="#Code-4" class="headerlink" title="Code:"></a>Code:</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">Python3 :</span><br><span class="line"></span><br><span class="line">class Solution:</span><br><span class="line">    def romanToInt(self, s):</span><br><span class="line">        &quot;&quot;&quot;</span><br><span class="line">        :type s: str</span><br><span class="line">        :rtype: int</span><br><span class="line">        &quot;&quot;&quot;</span><br><span class="line">        roman = &#123;&apos;M&apos;:1000, &apos;D&apos;:500, &apos;C&apos;:100, &apos;L&apos;:50, &apos;X&apos;:10, &apos;V&apos;:5, &apos;I&apos;:1&#125;;</span><br><span class="line">        sum = 0</span><br><span class="line">        ls = 0</span><br><span class="line">        lens = len(s)</span><br><span class="line">        if lens == 0:</span><br><span class="line">            return 0</span><br><span class="line">        for i in s:</span><br><span class="line">            if roman[i] &gt; ls:</span><br><span class="line">               //ps : sum = sum - ls + roman[i] - ls 这里简化了</span><br><span class="line">                sum = sum - 2 * ls + roman[i]</span><br><span class="line">            else:</span><br><span class="line">                sum = sum + roman[i]</span><br><span class="line">            ls = roman[i]</span><br><span class="line">        return sum</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
+          ps: 原文来自简书后续将会同步更新1.Two Sums
+Given an array of integers, return indices of the two numbers such that they add up to a specific target.
 
-          
+You may assume
+          ...
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2019/03/04/CodingProgress/#more" rel="contents">
+              Read more &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
         
       
     </div>
@@ -989,55 +850,16 @@
       
         
           
-            <h4 id="写在开头：投机倒把的一般都凉了。一如我薅的这个被叫做ccvt的还未上交易所的币，号称是聊天就能挖矿，刺激得一笔，本人的投机倒把最终以被ban了邀请码不得了之。话不多说进入正题。"><a href="#写在开头：投机倒把的一般都凉了。一如我薅的这个被叫做ccvt的还未上交易所的币，号称是聊天就能挖矿，刺激得一笔，本人的投机倒把最终以被ban了邀请码不得了之。话不多说进入正题。" class="headerlink" title="写在开头：投机倒把的一般都凉了。一如我薅的这个被叫做ccvt的还未上交易所的币，号称是聊天就能挖矿，刺激得一笔，本人的投机倒把最终以被ban了邀请码不得了之。话不多说进入正题。"></a>写在开头：投机倒把的一般都凉了。一如我薅的这个被叫做ccvt的还未上交易所的币，号称是聊天就能挖矿，刺激得一笔，本人的投机倒把最终以被ban了邀请码不得了之。话不多说进入正题。</h4><p><img src="https://user-gold-cdn.xitu.io/2018/12/26/167eac6d85fb4d35?w=300&amp;h=300&amp;f=gif&amp;s=46254" alt=""></p>
-<p>起因是在本人在某个除了技术其他都聊的技术群里的得知一位老哥所在的公司开发了个叫ccvt的币种，在群里宣传，可以通过邀请新用户获得50个ccvt币，然后还提及这个会在明年2月份上交易所并开通提现功能，我一想这个不就可以套现，而且这个邀请注册估计就那么回事，可能可以投机倒把，果断注册看了一把，发现可以通过利用接码平台来实现虚拟号码注册从而达到邀请的目的。</p>
-<ul>
-<li>本文用到的工具：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Postman 懂得都懂</span><br><span class="line">PHP7 （如果需要发送邮件报警需要 PHPMailer）</span><br><span class="line">laravel5.6</span><br><span class="line">chrome浏览器（废话）</span><br><span class="line">易码（接码平台）</span><br><span class="line">百度云--文字识别之数字识别（免费的 每天500次上限）</span><br><span class="line">smtp邮箱（非必须）</span><br><span class="line">服务器一台（也可以是自己的破机）</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<p>本文编程语言使用PHP，其他语言大同小异，至于为啥用PHP–PHP是世界上最好的语言！百度云需要申请文字识别的应用,因为免费的识别率不是很高，不过够用了。易码平台是一个接码平台–相当于一个虚拟手机号可以接收验证码。</p>
-<h3 id="Let’s-Code"><a href="#Let’s-Code" class="headerlink" title="Let’s Code:"></a>Let’s Code:</h3><h4 id="1-接口分析"><a href="#1-接口分析" class="headerlink" title="1. 接口分析"></a>1. 接口分析</h4><p><img src="https://user-gold-cdn.xitu.io/2018/12/26/167ead4cd051dac6?w=1092&amp;h=1310&amp;f=png&amp;s=129647" alt="注册页面"><br>通过图片可以看到注册页面包含：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">手机号 图片验证码 短信验证码 2次密码 邀请码</span><br></pre></td></tr></table></figure></p>
-<p>随便注册一下，用chrome控制台看下：</p>
-<p><img src="https://user-gold-cdn.xitu.io/2018/12/26/167ead7e4d4ea64e?w=1764&amp;h=1092&amp;f=png&amp;s=321025" alt=""><br>可以获取主要请求参数：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">callback jq的回调</span><br><span class="line">country_code  手机号所属的国家编号 中国的是 86</span><br><span class="line">cellphone 手机号</span><br><span class="line">sms_code 短信验证码</span><br><span class="line">pass_word 密码</span><br><span class="line">pass_word_hash 密码的hash</span><br><span class="line">invit_code 邀请码</span><br><span class="line">_ 时间戳</span><br></pre></td></tr></table></figure></p>
-<p>其他无关紧要的就不写了,发现参数里没有涉及到图片验证码，所以应该用于短信发送的时候验证了，测试一把发现果然如此。</p>
-<p><img src="https://user-gold-cdn.xitu.io/2018/12/26/167eae197b69161a?w=2734&amp;h=996&amp;f=png&amp;s=348281" alt="图片验证码错误"><br>看下接口：</p>
-<p><img src="https://user-gold-cdn.xitu.io/2018/12/26/167eae2441a44788?w=1354&amp;h=736&amp;f=png&amp;s=154080" alt=""><br>可以获取发送验证码的请求参数：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">callback</span><br><span class="line">cellphone</span><br><span class="line">country_code</span><br><span class="line">bind_type 默认1</span><br><span class="line">cfm_code 图片验证码</span><br></pre></td></tr></table></figure></p>
-<p>那么再获取到有效的验证码的图片就能开始开发正式投机倒把。<br>验证码图片接口：</p>
-<p><img src="https://user-gold-cdn.xitu.io/2018/12/26/167eae55788891b8?w=1426&amp;h=528&amp;f=png&amp;s=41885" alt=""><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://ccvt.io/api/inc/code.php</span><br></pre></td></tr></table></figure></p>
-<p>生成的PHPSession Cookie:</p>
-<p><img src="https://user-gold-cdn.xitu.io/2018/12/26/167eae8710530b5a?w=1780&amp;h=670&amp;f=png&amp;s=125552" alt=""></p>
-<h4 id="2-瞎几把分析"><a href="#2-瞎几把分析" class="headerlink" title="2. 瞎几把分析"></a>2. 瞎几把分析</h4><p>根据目前的几个接口可以有以下流程：</p>
-<ul>
-<li>1.请求接口 获取验证码图片，并下载下来（这个时候会生成一个关键的PHPSession 需要注意必要的话可以保存）</li>
-<li>2.把下载过来的图片请求到百度云的数字识别接口，获取数字化的图片验证码</li>
-<li>3.通过易码的接口获取手机号，并请求发送验证码的接口，发送验证码</li>
-<li>4.轮询易码的相关接口获取验证码</li>
-<li>5.基于第4步，请求注册接口</li>
-</ul>
-<p>可能遇到的问题：</p>
-<ul>
-<li>1.可能会获取不到图片</li>
-<li>2.百度云可能因为qps超限或者超过当日请求量而报错</li>
-<li>3.验证码识别失败，发送验证码接口请求失败</li>
-<li>4.验证码获取不到</li>
-<li>5.因某些原因注册失败</li>
-</ul>
-<h4 id="3-Coding"><a href="#3-Coding" class="headerlink" title="3. Coding"></a>3. Coding</h4><h5 id="PS-代码中的-request类是copy过来的，只是简单封装了curl请求类的方法-可以通过方法的命名猜到它的作用。"><a href="#PS-代码中的-request类是copy过来的，只是简单封装了curl请求类的方法-可以通过方法的命名猜到它的作用。" class="headerlink" title="PS:代码中的 request类是copy过来的，只是简单封装了curl请求类的方法,可以通过方法的命名猜到它的作用。"></a>PS:代码中的 request类是copy过来的，只是简单封装了curl请求类的方法,可以通过方法的命名猜到它的作用。</h5><p>3.1 获取图片验证码<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * 获取图片验证码</span><br><span class="line"> */</span><br><span class="line">public function getAuthCode()</span><br><span class="line">&#123;</span><br><span class="line">    //这个请求会生成唯一的 sessionId 需要注意接口异常问题</span><br><span class="line">    $errorTime = 10;</span><br><span class="line">    $start = 0;</span><br><span class="line">    Resend:</span><br><span class="line">    //todo 获取代理ip</span><br><span class="line">    $ip = &quot;&quot;;</span><br><span class="line">    if ($ip) &#123;</span><br><span class="line">        $this-&gt;request-&gt;set_proxy($ip);</span><br><span class="line">    &#125;</span><br><span class="line">    $this-&gt;request-&gt;set_referer($this-&gt;referer);</span><br><span class="line">    $code = $this-&gt;request-&gt;get($this-&gt;code_url);</span><br><span class="line">    if ($code) &#123;</span><br><span class="line">        $cookie = $this-&gt;request-&gt;get_cookies(self::CCVT_URL);</span><br><span class="line">        if (!$cookie) &#123;</span><br><span class="line">            if ($start &lt; $errorTime) &#123;</span><br><span class="line">                $start++;</span><br><span class="line">                goto Resend;</span><br><span class="line">            &#125;</span><br><span class="line">            $this-&gt;sendEmail(&apos;脚本告警&apos;, &quot;获取cookie失败&quot; . date(&quot;Y-m-d H:i:s&quot;));</span><br><span class="line">            exit;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            self::$session = $cookie;</span><br><span class="line">            $this-&gt;downloadCode($code);</span><br><span class="line">            $this-&gt;getCode();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * 保存验证码图片</span><br><span class="line"> * @param $image</span><br><span class="line"> */</span><br><span class="line">public function downloadCode($image)</span><br><span class="line">&#123;</span><br><span class="line">    $file = app_path(&apos;Storage/ccvt/code/&apos;);</span><br><span class="line">    if (!is_dir($file)) &#123;</span><br><span class="line">        mkdir($file, 0777, true);</span><br><span class="line">    &#125;</span><br><span class="line">    $file .= &apos;code.png&apos;;</span><br><span class="line">    file_put_contents($file, $image);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * 获取验证码</span><br><span class="line"> */</span><br><span class="line">public function getCode()</span><br><span class="line">&#123;</span><br><span class="line">    //通过百度ocr接口拿验证码存在一定的准确率</span><br><span class="line">    $file = app_path(&apos;Storage/ccvt/code/&apos;);</span><br><span class="line">    $file = $file . &quot;code.png&quot;;</span><br><span class="line">    if (!file_exists($file)) &#123;</span><br><span class="line">        $this-&gt;sendEmail(&apos;脚本告警&apos;, &quot;获取验证码图片失败!&quot; . date(&quot;Y-m-d H:i:s&quot;));</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        $ocr = new Ocr();</span><br><span class="line">        $code = $ocr-&gt;getCode($file);</span><br><span class="line">        if (is_numeric($code)) &#123;</span><br><span class="line">            self::$code = $code;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            $this-&gt;sendEmail(&apos;脚本告警&apos;, &quot;百度接口识别错误!返回内容:&lt;/br&gt;&quot; . json_encode($code, JSON_UNESCAPED_UNICODE), true);</span><br><span class="line">            exit;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>流程是： 获取验证码-&gt;保存验证码-&gt;请求百度云</p>
-<p>请求百度云的方法，具体实现可以查看 <a href="https://cloud.baidu.com/doc/OCR/OCR-API.html#.E8.AF.B7.E6.B1.82.E8.AF.B4.E6.98.8E" target="_blank" rel="noopener">百度云</a> 的接口：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">public function getCode($path)</span><br><span class="line">    &#123;</span><br><span class="line">        if (!$path) &#123;</span><br><span class="line">            return false;</span><br><span class="line">        &#125;</span><br><span class="line">        $request = new Request();</span><br><span class="line">        $request-&gt;set_header(&apos;Content-Type&apos;, &apos;application/x-www-form-urlencoded&apos;);</span><br><span class="line">        //图片base64</span><br><span class="line">        $image = $this-&gt;base64Image($path);</span><br><span class="line">        $postUrl = self::OCR_NUMBER_URL . &apos;?access_token=&apos; . $this-&gt;getAccessToken();</span><br><span class="line">        $param = [</span><br><span class="line">            &apos;image&apos; =&gt; $image,</span><br><span class="line">        ];</span><br><span class="line">        $result = $request-&gt;post($postUrl, $param);</span><br><span class="line">        $code = &apos;&apos;;</span><br><span class="line">        if ($result) &#123;</span><br><span class="line">            $result = json_decode($result);</span><br><span class="line">            if (isset($result-&gt;words_result)) &#123;</span><br><span class="line">                //因为百度云返回的不是一次识别，需要循环拿出</span><br><span class="line">                foreach ($result-&gt;words_result as $key =&gt; $value) &#123;</span><br><span class="line">                    $code .= $value-&gt;words;</span><br><span class="line">                &#125;</span><br><span class="line">                $code = (int)$code;</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                return $result;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        return $code;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
-<p>3.2 获取手机号并发送验证码</p>
-<p>易码的相关接口就不贴了，可以看下 <a href="http://www.51ym.me/User/apidocs.html" target="_blank" rel="noopener">文档</a>:</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br></pre></td><td class="code"><pre><span class="line"> /**</span><br><span class="line"> * 获取手机号码</span><br><span class="line"> */</span><br><span class="line">public function getTelephone()</span><br><span class="line">&#123;</span><br><span class="line">    $getUrl = sprintf($this-&gt;Telephone_Api, $this-&gt;token, $this-&gt;item_num);</span><br><span class="line">    $result = $this-&gt;request-&gt;get($getUrl);</span><br><span class="line">    if ($result) &#123;</span><br><span class="line">        $results = explode(&apos;|&apos;, $result);</span><br><span class="line">        if ($results[0] == &apos;success&apos;) &#123;</span><br><span class="line">            if (is_numeric($results[1])) &#123;</span><br><span class="line">                self::$yima_telephone = $results[1];</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                //发送邮件告警</span><br><span class="line">                $this-&gt;sendEmail(&apos;脚本告警&apos;, &quot;获取yima手机号失败 code 2!接口返回内容:&lt;/br&gt;&quot; . $result, true);</span><br><span class="line">                exit;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            //发送邮件告警</span><br><span class="line">            $this-&gt;sendEmail(&apos;脚本告警&apos;, &quot;获取yima手机号失败 code 1!接口返回内容:&lt;/br&gt;&quot; . $result, true);</span><br><span class="line">            exit;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"> /**</span><br><span class="line"> * 发送验证码</span><br><span class="line"> */</span><br><span class="line">public function sendSmsCode()</span><br><span class="line">&#123;</span><br><span class="line">    $getUrl = sprintf($this-&gt;send_sms, self::$yima_telephone, self::$code, time() * 1000);</span><br><span class="line">    $errorTime = 10;</span><br><span class="line">    $start = 0;</span><br><span class="line">    Resend:</span><br><span class="line">    $this-&gt;request-&gt;set_referer($this-&gt;referer);</span><br><span class="line">    $result = $this-&gt;request-&gt;get($getUrl);</span><br><span class="line">    if ($result) &#123;</span><br><span class="line">        $_result = str_replace(&quot;(&quot;, &apos;&apos;, $result);</span><br><span class="line">        $_result = str_replace(&apos;);&apos;, &apos;&apos;, $_result);</span><br><span class="line">        $_result = json_decode($_result) ?? &apos;&apos;;</span><br><span class="line">        if (isset($_result-&gt;errcode) &amp;&amp; $_result-&gt;errcode != 0) &#123;</span><br><span class="line">            $this-&gt;freeTelephone();</span><br><span class="line">            $this-&gt;sendEmail(&apos;脚本告警&apos;, &quot;验证码发送失败: 内容如下:&lt;/br&gt;&quot; . &quot;url:&quot; . $getUrl . &quot;&lt;/br&gt;返回内容:&quot; . $result, true);</span><br><span class="line">            exit;</span><br><span class="line">        &#125; elseif (!isset($_result-&gt;errcode)) &#123;</span><br><span class="line">            if ($start &lt; $errorTime) &#123;</span><br><span class="line">                $start++;</span><br><span class="line">                goto Resend;</span><br><span class="line">            &#125;</span><br><span class="line">            $this-&gt;freeTelephone();</span><br><span class="line">            $this-&gt;sendEmail(&apos;脚本告警&apos;, &quot;验证码发送失败3: 内容如下:&lt;/br&gt;&quot; . &quot;url:&quot; . $getUrl . &quot;&lt;/br&gt;返回内容:&quot; . $result, true);</span><br><span class="line">            exit;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        if ($start &lt; $errorTime) &#123;</span><br><span class="line">            $start++;</span><br><span class="line">            goto Resend;</span><br><span class="line">        &#125;</span><br><span class="line">        $this-&gt;freeTelephone();</span><br><span class="line">        $this-&gt;sendEmail(&apos;脚本告警&apos;, &quot;验证码发送失败2: 返回数据为空 内容如下:&lt;/br&gt;&quot; . &quot;url:&quot; . $getUrl . &quot;&lt;/br&gt;返回内容:&quot; . $result, true);</span><br><span class="line">        exit;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * 获取短信验证码</span><br><span class="line"> */</span><br><span class="line">public function getSmsCode()</span><br><span class="line">&#123;</span><br><span class="line">    //需要轮询 60秒已经很长了</span><br><span class="line">    $getUrl = sprintf($this-&gt;GetMessage_Api, $this-&gt;token, $this-&gt;item_num, self::$yima_telephone);</span><br><span class="line">    $nowTime = time();</span><br><span class="line">    $endTime = $nowTime + 60;</span><br><span class="line">    do &#123;</span><br><span class="line">        if ($endTime &lt; time()) &#123;</span><br><span class="line">            //超时</span><br><span class="line">            break;</span><br><span class="line">        &#125;</span><br><span class="line">        $result = $this-&gt;request-&gt;get($getUrl);</span><br><span class="line">        if ($result) &#123;</span><br><span class="line">            $_result = explode(&apos;|&apos;, $result);</span><br><span class="line">            if ($_result[0] == &apos;success&apos;) &#123;</span><br><span class="line">                $content = $_result[1];</span><br><span class="line">                echo &quot;短信获取成功:&quot; . $content . PHP_EOL;</span><br><span class="line">                //释放</span><br><span class="line">                if (preg_match(&quot;/\d+/&quot;, $content, $codes)) &#123;</span><br><span class="line">                    self::$sms_code = $codes[0];</span><br><span class="line">                &#125; else &#123;</span><br><span class="line">                    $this-&gt;sendEmail(&apos;脚本告警&apos;, &quot;获取验证码失败! :&lt;/br&gt;&quot; . $content, true);</span><br><span class="line">                    $this-&gt;freeTelephone();</span><br><span class="line">                    break;</span><br><span class="line">                &#125;</span><br><span class="line">                $this-&gt;freeTelephone();</span><br><span class="line">                break;</span><br><span class="line">            &#125; elseif ($_result[0] != 3001) &#123;</span><br><span class="line">                //不是3001状态的直接不要这次的注册 发送邮件</span><br><span class="line">                $this-&gt;freeTelephone();</span><br><span class="line">                $this-&gt;sendEmail(&apos;脚本告警&apos;, &quot;轮询手机号码异常！返回内容如下:&lt;/br&gt;&quot; . $result, true);</span><br><span class="line">                break;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        //5秒要一次 可能一次要到了 睡5秒也无妨</span><br><span class="line">        sleep(5);</span><br><span class="line">    &#125; while (!self::$sms_code);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * 释放手机号</span><br><span class="line"> */</span><br><span class="line">public function freeTelephone()</span><br><span class="line">&#123;</span><br><span class="line">    $getUrl = sprintf($this-&gt;Free_Telephone_Api, $this-&gt;token, $this-&gt;item_num, self::$yima_telephone);</span><br><span class="line">    echo &quot;手机号释放:&quot; . $this-&gt;request-&gt;get($getUrl) . PHP_EOL;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>脚本跑下来这里一般是因为图片验证码错误失败，百度云这个识别率真的感人。。。。</p>
-<p>3.3 最后一步！！注册<br>拼装好参数，请求就完事儿了：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line">     * 5.注册</span><br><span class="line">     */</span><br><span class="line">    public function register()</span><br><span class="line">    &#123;</span><br><span class="line">        if ($this-&gt;checkParam()) &#123;</span><br><span class="line">            $getUrl = sprintf($this-&gt;register_url, self::$yima_telephone, self::$sms_code, time() * 100);</span><br><span class="line">            $result = $this-&gt;request-&gt;get($getUrl);</span><br><span class="line">            if ($result) &#123;</span><br><span class="line">                //因为有callback所以需要解析</span><br><span class="line">                $_result = str_replace(&quot;(&quot;, &apos;&apos;, $result);</span><br><span class="line">                $_result = str_replace(&apos;);&apos;, &apos;&apos;, $_result);</span><br><span class="line">                $_result = json_decode($_result) ?? &apos;&apos;;</span><br><span class="line">                if (isset($_result-&gt;errcode) &amp;&amp; $_result-&gt;errcode == 0) &#123;</span><br><span class="line">                    //注册成功</span><br><span class="line">                    $this-&gt;sendEmail(&apos;注册成功通知&apos;, &quot;使用的手机号为:&lt;/br&gt;&quot; . self::$yima_telephone . &quot;注册时间:&lt;/br&gt;&quot; . date(&quot;Y-m-d H:i:s&quot;), true);</span><br><span class="line">                &#125; else &#123;</span><br><span class="line">                    echo &quot;注册失败!&quot; . date(&apos;Y-m-d H:i:s&apos;) . PHP_EOL;</span><br><span class="line">                    echo &quot;使用手机号:&quot; . self::$yima_telephone . &quot;使用验证码:&quot; . self::$sms_code . PHP_EOL;</span><br><span class="line">                    echo &quot;返回数据结构:&quot; . json_encode($_result, JSON_UNESCAPED_UNICODE) . PHP_EOL;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    /**</span><br><span class="line">     * 校验必要的参数</span><br><span class="line">     * @return bool</span><br><span class="line">     */</span><br><span class="line">    private function checkParam()</span><br><span class="line">    &#123;</span><br><span class="line">        if (!self::$yima_telephone) &#123;</span><br><span class="line">            return false;</span><br><span class="line">        &#125;</span><br><span class="line">        if (!self::$sms_code) &#123;</span><br><span class="line">            return false;</span><br><span class="line">        &#125;</span><br><span class="line">        return true;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-<p>到此主要代码就鲁完了，还可以加上代理啊，邮件报警系统呀，余额预警呀，之类的，<br>注册成功后，进个人中心看到到账的ccvt币心里还是很美滋滋的。</p>
-<p><img src="https://user-gold-cdn.xitu.io/2018/12/26/167eb26d61dae126?w=2336&amp;h=842&amp;f=png&amp;s=151413" alt="邀请记录"><br>然后将代码放到laravel的任务调度(定时任务)去，发布到服务器上就可以全自动投机倒把了～～～～</p>
-<p>可惜好景不长，在代码运行了3天后发现注册成功邮件都不发了，上服务器一看日志，发现都是注册失败的提示，本人果断手动执行一下发现还是注册失败，然后去掉了邀请码，发现就注册成功了，emmmmm,我觉得还是因为没加代理，被他们的技术人员把邀请码拉入黑名单了。投机倒把就这么没了，本人也写下这边文章记录下自己当时的过程～最后，投机倒把还是少干，xD。</p>
-<p>PS：这个网站好几个接口存在sql注入的可能，之前测数据的时候发现接口会报sql错误，可能有sql注入的点，我没深入研究，后来再访问就没有报错了，应该是修复了（滑稽）。</p>
-<p>最后附上该项目的 <a href="https://github.com/LinsVert/Miscellaneous" target="_blank" rel="noopener">gayhub</a> 欢迎各位 start 或 follow</p>
-
-          
+          写在开头：投机倒把的一般都凉了。一如我薅的这个被叫做ccvt的还未上交易所的币，号称是聊天就能挖矿，刺激得一笔，本人的投机倒把最终以被ban了邀请码不得了之。话不多说进入正题。
+起因是在本人在某个除了技术其他都聊的技术群里的得知一位老哥所在的公司开发了个叫ccvt的币种，在群里宣传，可以通过邀请新用
+          ...
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2018/12/26/投机倒把之邀请撸某币/#more" rel="contents">
+              Read more &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
         
       
     </div>
@@ -1155,337 +977,52 @@
       
         
           
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML" async></script>
-
-<h1 id="CS229-课程讲义中文翻译"><a href="#CS229-课程讲义中文翻译" class="headerlink" title="CS229 课程讲义中文翻译"></a>CS229 课程讲义中文翻译</h1><table>
-<thead>
-<tr>
-<th>原作者</th>
-<th>翻译</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><a href="http://www.andrewng.org/" target="_blank" rel="noopener">Andrew Ng  吴恩达</a></td>
-<td><a href="https://www.zhihu.com/people/cycleuser/columns" target="_blank" rel="noopener">CycleUser</a></td>
-</tr>
-</tbody>
-</table>
-<table>
-<thead>
-<tr>
-<th>相关链接</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><a href="https://github.com/Kivy-CN/Stanford-CS-229-CN" target="_blank" rel="noopener">Github 地址</a></td>
-</tr>
-<tr>
-<td><a href="https://zhuanlan.zhihu.com/MachineLearn" target="_blank" rel="noopener">知乎专栏</a></td>
-</tr>
-<tr>
-<td><a href="http://cs229.stanford.edu/" target="_blank" rel="noopener">斯坦福大学 CS229 课程网站</a></td>
-</tr>
-<tr>
-<td><a href="http://open.163.com/movie/2008/1/M/C/M6SGF6VB4_M6SGHFBMC.html" target="_blank" rel="noopener">网易公开课中文字幕视频</a></td>
-</tr>
-</tbody>
-</table>
-<h1 id="第一章"><a href="#第一章" class="headerlink" title="第一章"></a>第一章</h1><h2 id="监督学习（Supervised-learning）"><a href="#监督学习（Supervised-learning）" class="headerlink" title="监督学习（Supervised learning）"></a>监督学习（Supervised learning）</h2><p>咱们先来聊几个使用监督学习来解决问题的实例。假如咱们有一个数据集，里面的数据是俄勒冈州波特兰市的 47 套房屋的面积和价格：</p>
-<table>
-<thead>
-<tr>
-<th>居住面积（平方英尺）</th>
-<th>价格（千美元）</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>2104</td>
-<td>400</td>
-</tr>
-<tr>
-<td>1600</td>
-<td>330</td>
-</tr>
-<tr>
-<td>2400</td>
-<td>369</td>
-</tr>
-<tr>
-<td>1416</td>
-<td>232</td>
-</tr>
-<tr>
-<td>3000</td>
-<td>540</td>
-</tr>
-<tr>
-<td>…</td>
-<td>…</td>
-</tr>
-<tr>
-<td>…</td>
-<td>…</td>
-</tr>
-<tr>
-<td>…</td>
-<td>…</td>
-</tr>
-</tbody>
-</table>
-<p>用这些数据来投个图：</p>
-<p><img src="https://raw.githubusercontent.com/Kivy-CN/Stanford-CS-229-CN/master/img/cs229note1f1.png" alt=""></p>
-<p>这里要先规范一下符号和含义，这些符号以后还要用到，咱们假设 $x^{(i)}$ 表示 “输入的” 变量值（在这个例子中就是房屋面积），也可以叫做<strong>输入特征</strong>；然后咱们用 $y^{(i)}$ 来表示“输出值”，或者称之为<strong>目标变量</strong>，这个例子里面就是房屋价格。这样的一对 $(x^{(i)},y^{(i)})$就称为一组训练样本，然后咱们用来让机器来学习的数据集，就是一个长度为 m 的训练样本的列表-${(x^{(i)},y^{(i)}); i = 1,\vdots ,m}$-也叫做一个<strong>训练集</strong>。另外一定注意，这里的上标 (i) 只是作为训练集的索引记号，和数学乘方没有任何关系，千万别误解了。另外我们还会用大写的 X 来表示 <strong>输入值的空间</strong>，大写的 Y 表示<strong> 输出值的空间</strong>。在本节的这个例子中，输入输出的空间都是实数域，所以  X = Y = R 。</p>
-<p>然后再用更加规范的方式来描述一下监督学习问题，我们的目标是，给定一个训练集，来让机器学习一个函数 $h: X → Y$，让 $h(x)$ 能是一个与对应的真实 y 值比较接近的评估值。由于一些历史上的原因，这个函数 h 就被叫做<strong>假设（hypothesis）</strong>。用一个图来表示的话，这个过程大概就是下面这样：</p>
-<p><img src="https://raw.githubusercontent.com/Kivy-CN/Stanford-CS-229-CN/master/img/cs229note1f2.png" alt=""></p>
-<p>如果我们要预测的目标变量是连续的，比如在咱们这个<strong>房屋价格-面积</strong>的案例中，这种学习问题就被称为回归问题。如果 y 只能取一小部分的离散的值（比如给定房屋面积，咱们要来确定这个房子是一个住宅还是公寓），这样的问题就叫做<strong>分类问题</strong>。</p>
-<h3 id="第一部分-线性回归"><a href="#第一部分-线性回归" class="headerlink" title="第一部分 线性回归"></a>第一部分 线性回归</h3><p>为了让我们的房屋案例更有意思，咱们稍微对数据集进行一下补充，增加上每一个房屋的卧室数目：</p>
-<table>
-<thead>
-<tr>
-<th>居住面积（平方英尺）</th>
-<th>卧室数目</th>
-<th>价格（千美元）</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>2104</td>
-<td>3</td>
-<td>400</td>
-</tr>
-<tr>
-<td>1600</td>
-<td>3</td>
-<td>330</td>
-</tr>
-<tr>
-<td>2400</td>
-<td>3</td>
-<td>369</td>
-</tr>
-<tr>
-<td>1416</td>
-<td>2</td>
-<td>232</td>
-</tr>
-<tr>
-<td>3000</td>
-<td>4</td>
-<td>540</td>
-</tr>
-<tr>
-<td>…</td>
-<td>…</td>
-<td>…</td>
-</tr>
-<tr>
-<td>…</td>
-<td>…</td>
-<td>…</td>
-</tr>
-<tr>
-<td>…</td>
-<td>…</td>
-<td>…</td>
-</tr>
-</tbody>
-</table>
-<p>现在，输入特征 x 就是在 $R^2$ 范围取值的一个二维向量了。例如 $x_1^{(i)}$ 就是训练集中第 i 个房屋的面积，而 $x_2^{(i)}$  就是训练集中第 i 个房屋的卧室数目。（通常来说，设计一个学习算法的时候，选择那些输入特征都取决于你，所以如果你不在波特兰收集房屋信息数据，你也完全可以选择包含其他的特征，例如房屋是否有壁炉，卫生间的数量啊等等。关于特征筛选的内容会在后面的章节进行更详细的介绍，不过目前来说就暂时先用给定的这两个特征了。）<br>要进行这个监督学习，咱们必须得确定好如何在计算机里面对这个<strong>函数/假设</strong> h 进行表示。咱们现在刚刚开始，就来个简单点的，咱们把 y 假设为一个以 x 为变量的线性函数：</p>
-<p>$ h_\theta  (x) = \theta_0 + \theta_1 \times x_1 + \theta_2 \times x_2$</p>
-<p>这里的$\theta_i$是<strong>参数</strong>（也可以叫做<strong>权重</strong>），是从 x 到 y 的线性函数映射的空间参数。在不至于引起混淆的情况下，咱们可以把$h_\theta(x)$ 里面的 θ  省略掉，就简写成 $h(x$)。另外为了简化公式，咱们还设 $x_0 = 1$（这个为 <strong>截距项 intercept term</strong>）。这样简化之后就有了：</p>
-<p>$ h(x) = \sum^n_{i=0}  \theta_i x_i = \theta^T x$</p>
-<p>等式的最右边的 θ 和 x 都是向量，等式中的 $n$ 是输入变量的个数（不包括$x_0$）。</p>
-<p>现在，给定了一个训练集了，咱们怎么来挑选/学习参数 θ 呢？一个看上去比较合理的方法就是让 $h(x)$ 尽量逼近 y，至少对咱已有的训练样本能适用。用公式的方式来表示的话，就要定义一个函数，来衡量对于每个不同的 θ 值，$h(x_{(i)})$ 与对应的 $y_{(i)}$ 的距离。这样用如下的方式定义了一个 <strong>成本函数 （cost function</strong>）:</p>
-<p>$ J(\theta) = \frac 12 \sum^m_{i=1}(H_\theta(x^{(i)})-y^{(i)})^2  $</p>
-<p>如果之前你接触过线性回归，你会发现这个函数和常规最小二乘法拟合模型中的最小二乘法成本函数非常相似。不管之前接触过没有，咱们都接着往下进行，以后就会发现这是一个更广泛的算法家族中的一个特例。</p>
-<h4 id="1-最小均方算法（LMS-algorithm）"><a href="#1-最小均方算法（LMS-algorithm）" class="headerlink" title="1 最小均方算法（LMS algorithm）"></a>1 最小均方算法（LMS algorithm）</h4><p>我们希望选择一个能让 $J(\theta)$ 最小的 θ 值。怎么做呢，咱们先用一个搜索的算法，从某一个对 θ 的“初始猜测值”，然后对 θ 值不断进行调整，来让 $J(\theta)$ 逐渐变小，最好是直到我们能够达到一个使 $J(\theta)$ 最小的 θ。具体来说，咱们可以考虑使用梯度下降法（gradient descent algorithm），这个方法就是从某一个 θ 的初始值开始，然后逐渐重复更新：</p>
-<p>$ \theta_j := \theta_j - \alpha \frac \partial {\partial\theta_J}J(\theta)$</p>
-<blockquote>
-<p>注：本文中 $:= $ 表示的是计算机程序中的一种赋值操作，是把等号右边的计算结果赋值给左边的变量，$a := b$ 就表示用 B 的值覆盖 A 原有的 值。要注意区分，如果写的是 $a = b$ 则表示的是判断二者相等的关系。（译者注：在 Python 中，单个等号 $=$ 就是赋值，两个等号 $==$  表示相等关系的判断。</p>
-</blockquote>
-<p>（上面的这个更新要同时对应从 0 到 $n$ 的所有j 值进行。）这里的 $\alpha$ 也称为学习速率。这个算法是很自然的，逐步重复朝向 J 降低最快的方向移动。<br>要实现这个算法，咱们需要解决等号右边的导数项。首先来解决只有一组训练样本 $(x, y)$ 的情况，这样就可以忽略掉等号右边对 J 的求和项目了。公式就简化下面这样：</p>
-<p>$\begin{aligned}<br>\frac \partial {\partial\theta_J}J(\theta) &amp; = \frac \partial {\partial\theta_J} \frac  12(h_\theta(x)-y)^2\<br>&amp; = 2 \times\frac 12(h_\theta(x)-y)\times \frac \partial {\partial\theta_J}  (h_\theta(x)-y) \<br>&amp; = (h_\theta(x)-y)\times \frac \partial {\partial\theta_J} \times(\sum^n_{i=0} \theta_ix_i-y) \<br>&amp; = (h_\theta(x)-y)\times x_j<br>\end{aligned}$</p>
-<p>对单个训练样本，更新规则如下所示：</p>
-<p>$ \theta_j := \theta_j + \alpha (y^{(i)}-h_\theta (x^{(i)}))x_j^{(i)}$</p>
-<p>这个规则也叫 LMS 更新规则 (LMS 是 “least mean squares” 的缩写，意思是最小均方)，也被称为 Widrow-Hoff 学习规则。这个规则有几个看上去就很自然直观的特性。例如，更新的大小与$(y^{(i)} − h\theta(x^{(i)}))$成正比；另外，当我们遇到训练样本的预测值与 $y^{(i)}$ 的真实值非常接近的情况下，就会发现基本没必要再对参数进行修改了；与此相反的情况是，如果我们的预测值 $h\theta(x^{(i)})$ 与 $y^{(i)}$ 的真实值有很大的误差（比如距离特别远），那就需要对参数进行更大地调整。</p>
-<p>当只有一个训练样本的时候，我们推导出了 LMS 规则。当一个训练集有超过一个训练样本的时候，有两种对这个规则的修改方法。第一种就是下面这个算法：<br>重复直到收敛{<br>$ \theta_j := \theta_j + \alpha \sum^m_{i=1}(y^{(i)}-h_\theta (x^{(i)}))x_j^{(i)}$ (对每个 J)<br>}</p>
-<p>读者很容易能证明，在上面这个更新规则中求和项的值就是$\frac {\partial J(\theta)}{\partial \theta_j}$ (这是因为对 J 的原始定义)。所以这个更新规则实际上就是对原始的成本函数 $J $进行简单的梯度下降。这一方法在每一个步长内检查所有整个训练集中的所有样本，也叫做<strong>批量梯度下降法（batch gradient descent</strong>）。这里要注意，因为梯度下降法容易被局部最小值影响，而我们要解决的这个线性回归的优化问题只能有一个全局的而不是局部的最优解；因此，梯度下降法应该总是收敛到全局最小值（假设学习速率 $\alpha$ 不设置的过大）。J 是一个凸的二次函数。下面是一个样例，其中对一个二次函数使用了梯度下降法来找到最小值。</p>
-<p><img src="https://raw.githubusercontent.com/Kivy-CN/Stanford-CS-229-CN/master/img/cs229note1f3.png" alt=""></p>
-<p>上图的椭圆就是一个二次函数的轮廓图。图中还有梯度下降法生成的规矩，初始点位置在$(48,30)$。图中的画的 x （用直线连接起来了）标记了梯度下降法所经过的 θ 的可用值。<br>对咱们之前的房屋数据集进行批量梯度下降来拟合 θ ，把房屋价格当作房屋面积的函数来进行预测，我们得到的结果是 $\theta_0 = 71.27, \theta_1 = 0.1345$。如果把 $h_{\theta}(x)$ 作为一个定义域在 x 上的函数来投影，同时也投上训练集中的已有数据点，会得到下面这幅图：<br><img src="https://raw.githubusercontent.com/Kivy-CN/Stanford-CS-229-CN/master/img/cs229note1f4.png" alt=""></p>
-<p>如果在数据集中添加上卧室数目作为输入特征，那么得到的结果就是 $\theta_0 = 89.60, \theta_1 = 0.1392, \theta_02 = −8.738$<br>这个结果就是用批量梯度下降法来获得的。此外还有另外一种方法能够替代批量梯度下降法，这种方法效果也不错。如下所示：</p>
-<p>循环：{<br>i 从 1 到 m:{<br>        $ \theta_j := \theta_j  +\alpha(y^{(i)}-h_{\theta}(x^{(i)}))x_j^{(i)}$ (对每个 j)<br>    }<br>}</p>
-<p>在这个算法里，我们对整个训练集进行了循环遍历，每次遇到一个训练样本，根据每个单一训练样本的误差梯度来对参数进行更新。这个算法叫做<strong>随机梯度下降法（stochastic gradient descent）</strong>，或者叫<strong>增量梯度下降法（incremental gradient descent）</strong>。批量梯度下降法要在运行第一步之前先对整个训练集进行扫描遍历，当训练集的规模 $m$ 变得很大的时候，因此引起的性能开销就很不划算了；随机梯度下降法就没有这个问题，而是可以立即开始，对查询到的每个样本都进行运算。通常情况下，随机梯度下降法查找到足够接近最低值的 θ 的速度要比批量梯度下降法更快一些。(也要注意，也有可能会一直无法收敛（converge）到最小值，这时候 θ 会一直在 $J_{(\theta)}$ 最小值附近震荡；不过通常情况下在最小值附近的这些值大多数其实也足够逼近了，足以满足咱们的精度要求，所以也可以用。当然更常见的情况通常是我们事先对数据集已经有了描述，并且有了一个确定的学习速率$\alpha$，然后来运行随机梯度下降，同时逐渐让学习速率 $\alpha$ 随着算法的运行而逐渐趋于 0，这样也能保证我们最后得到的参数会收敛到最小值，而不是在最小值范围进行震荡。) 由于以上种种原因，通常更推荐使用的都是随机梯度下降法，而不是批量梯度下降法，尤其是在训练用的数据集规模大的时候。</p>
-<h4 id="2-法方程（The-normal-equations）"><a href="#2-法方程（The-normal-equations）" class="headerlink" title="2 法方程（The normal equations）"></a>2 法方程（The normal equations）</h4><p>上文中的梯度下降法是一种找出 J 最小值的办法。然后咱们聊一聊另一种实现方法，这种方法寻找起来简单明了，而且不需要使用迭代算法。这种方法就是，我们直接利用找对应导数为 0 位置的 $\theta_j$，这样就能找到 J 的最小值了。我们想实现这个目的，还不想写一大堆代数公式或者好几页的矩阵积分，所以就要介绍一些做矩阵积分的记号。</p>
-<h5 id="2-1-矩阵导数（Matrix-derivatives）"><a href="#2-1-矩阵导数（Matrix-derivatives）" class="headerlink" title="2.1 矩阵导数（Matrix derivatives）"></a>2.1 矩阵导数（Matrix derivatives）</h5><p>假如有一个函数 $f: R_{m\times n} → R$ 从 $m\times n$ 大小的矩阵映射到实数域，那么就可以定义当矩阵为 A 的时候有导函数 $f$ 如下所示：</p>
-<p>$ \nabla_A f(A)=\begin{bmatrix} \frac {\partial f}{\partial A_{11}} &amp; \vdots  &amp; \frac {\partial f}{\partial A_{1n}} \ \vdots  &amp; \vdots &amp; \vdots  \ \frac {\partial f}{\partial A_{m1}} &amp; \vdots  &amp; \frac {\partial f}{\partial A_{mn}} \ \end{bmatrix}$</p>
-<p>因此，这个梯度 $\nabla_A f(A)$本身也是一个 m*n 的矩阵，其中的第 (i,j) 个元素是 $\frac {\partial f}{\partial A_{ij}} $ 。<br>假如 $ A =\begin{bmatrix} A_{11} &amp; A_{12} \ A_{21} &amp; A_{22} \ \end{bmatrix} $ 是一个 $2\times 2$  矩阵，然后给定的函数 $f:R^{2\times 2} → R$ 为:</p>
-<p>$ f(A) = \frac 32A_{11}+5A^2_{12}+A_{21}\times A_{22}$</p>
-<p>这里面的 $A_{ij}$ 表示的意思是矩阵 A 的第 (i,j) 个元素。</p>
-<p>然后就有了梯度：</p>
-<p>$ \nabla <em>A f(A) =\begin{bmatrix} \frac  32 &amp; 10 \times A</em>{12} \ A_{22} &amp; A_{21} \ \end{bmatrix} $</p>
-<p>然后咱们还要引入 trace 求迹运算，简写为 tr。对于一个给定的 $n\times n$ 方形矩阵 A，它的迹定义为对角项和：</p>
-<p>$ trA = \sum^n_{i=1} A_{ii}$</p>
-<p>假如 A 是一个实数，实际上 A 就可以看做是一个 $1\times 1$ 的矩阵，那么就有 A 的迹 $tr a = a$。(如果你之前没有见到过这个“运算记号”，就可以把 A 的迹看成是 $tr(A)$，或者理解成为一个对矩阵 A 进行操作的 trace 函数。不过通常情况都是写成不带括号的形式更多一些。)<br>如果有两个矩阵 A 和 B，能够满足 $AB$ 为方阵，trace 求迹运算就有一个特殊的性质： $trAB = trBA$ (自己想办法证明)。在此基础上进行推论，就能得到类似下面这样的等式关系：</p>
-<p>$trABC=trCAB=trBCA$<br>$trABCD=trDABC=trCDAB=trBCDA$</p>
-<p>下面这些和求迹运算相关的等量关系也很容易证明。其中 A 和 B 都是方形矩阵，A 是一个实数：<br>$ trA=trA^T$<br>$ tr(A+B)=trA+trB$<br>$ tr a A=a trA$</p>
-<p>接下来咱们就来在不进行证明的情况下提出一些矩阵导数（其中的一些直到本节末尾才用得上）。另外要注意等式（4）A 必须是<strong>非奇异方形矩阵（non-singular square matrices</strong>），而 $|A|$ 表示的是矩阵 A 的行列式。那么我们就有下面这些等量关系：</p>
-<p>$<br>\begin{aligned}<br>   \nabla_A tr AB &amp; = B^T &amp; \text{(1)}\<br>   \nabla_{A^T} f(A) &amp; = (\nabla_{A} f(A))^T &amp;\text{(2)}\<br>   \nabla_A tr ABA^TC&amp; = CAB+C^TAB^T &amp;\text{(3)}\<br>   \nabla_A|A| &amp; = |A|(A^{-1})^T &amp;\text{(4)}\<br>\end{aligned}<br>$</p>
-<p>为了让咱们的矩阵运算记号更加具体，咱们就详细解释一下这些等式中的第一个。加入我们有俩一个确定的矩阵 $B ∈ R^{n\times m}$（注意顺序，是$m\times n$，这里的意思也就是 B 的元素都是实数，B 的形状是 $n\times m$ 的一个矩阵），那么接下来就可以定义一个函数$ f: R^{m\times n} → R$ ，对应这里的就是 $f(A) = trAB$。这里要注意，这个矩阵是有意义的，因为如果 $A ∈ R^{m\times n} $，那么 $AB$ 就是一个方阵，是方阵就可以应用 trace 求迹运算；因此，实际上 f 映射的是从 $R^{m\times n} $ 到实数域 $R$。这样接下来就可以使用矩阵导数来找到 $\nabla_Af(A)$ ，这个导函数本身也是一个 $m \times n $的矩阵。上面的等式(1) 表明了这个导数矩阵的第 (i,j)个元素等同于 $B^T$ （B的转置）的第 (i,j) 个元素，或者更直接表示成 $B_{ji}$。<br>上面等式(1-3) 都很简单，证明就都留给读者做练习了。等式(4)需要用逆矩阵的伴随矩阵来推导出。</p>
-<blockquote>
-<p>注：假如咱们定义一个矩阵 $A′$，它的第 (i,j) 个元素是$ (−1)^{i+j}$ 与矩阵 $A $移除 第 i 行 和 第 J 列 之后的行列式的乘积，则可以证明有$A^{−1} = (A′)^T /|A|$。（你可以检查一下，比如在 A 是一个 $2\times 2$ 矩阵的情况下看看 $A^{-1}$ 是什么样的，然后以此类推。如果你想看看对于这一类结果的证明，可以参考一本中级或者高级的线性代数教材，比如Charles Curtis, 1991, Linear Algebra, Springer。）这也就意味着 $A′ = |A|(A−1)^T $。此外，一个矩阵 A 的行列式也可以写成 $|A| = A_{ij}A′$ 。因为 $(A′)<em>{ij}$ 不依赖 $A</em>{ij}$ （通过定义也能看出来），这也就意味着$(\frac  \partial {\partial A_{ij}})|A| = A′_{ij} $，综合起来也就得到上面的这个结果了。</p>
-</blockquote>
-<h5 id="2-2-最小二乘法回顾（Least-squares-revisited）"><a href="#2-2-最小二乘法回顾（Least-squares-revisited）" class="headerlink" title="2.2 最小二乘法回顾（Least squares revisited）"></a>2.2 最小二乘法回顾（Least squares revisited）</h5><p>通过刚才的内容，咱们大概掌握了矩阵导数这一工具，接下来咱们就继续用逼近模型（closed-form）来找到能让 $J(\theta)$ 最小的 θ 值。首先咱们把 J 用矩阵-向量的记号来重新表述。<br>给定一个训练集，把设计矩阵（design matrix） x 设置为一个 $m\times n$ 矩阵（实际上，如果考虑到截距项，也就是 $\theta_0$ 那一项，就应该是 $m\times (n+1)$ 矩阵），这个矩阵里面包含了训练样本的输入值作为每一行：<br>$ X =\begin{bmatrix}<br>-(x^{(1)}) ^T-\<br>-(x^{(2)}) ^T-\<br>\vdots \<br>-(x^{(m)}) ^T-\<br>\end{bmatrix} $</p>
-<p>然后，咱们设 $\vec{y}$ 是一个 $m$ 维向量（m-dimensional vector），其中包含了训练集中的所有目标值：</p>
-<p>$ y =\begin{bmatrix}<br>y^{(1)}\<br>y^{(2)}\<br>\vdots \<br>y^{(m)}\<br>\end{bmatrix} $</p>
-<p>因为 $h_\theta (x^{(i)}) = (x^{(i)})^T\theta $（译者注：这个怎么推出来的我目前还没尝试，目测不难），所以可以证明存在下面这种等量关系：</p>
-<p>$<br>\begin{aligned}<br>X\theta - \vec{y}  &amp;=<br>\begin{bmatrix}<br>(x^{(1)})^T\theta \<br>\vdots \<br>(x^{(m)})^T\theta\<br>\end{bmatrix} -<br>\begin{bmatrix}<br>y^{(1)}\<br>\vdots \<br>y^{(m)}\<br>\end{bmatrix}\<br>&amp; =<br>\begin{bmatrix}<br>h_\theta (x^{1}) -y^{(1)}\<br>\vdots \<br>h_\theta (x^{m})-y^{(m)}\<br>\end{bmatrix}\<br>\end{aligned}<br>$</p>
-<p>对于向量 $\vec{z}$ ，则有 $z^T z = z^2$ ，因此利用这个性质，可以推出:</p>
-<p>$<br>\begin{aligned}<br>\frac 12(X\theta - \vec{y})^T (X\theta - \vec{y}) &amp;=\frac 12 \sum^m_{i=1}(h_\theta (x^{(i)})-y^{(i)})^2\<br>\end{aligned}<br>$</p>
-<p>最后，要让 J 的值最小，就要找到导数为 0 的点。结合等式（2）和等式（3），就能得到下面这个等式（5）：</p>
-<p>$ \nabla_{A^T} trABA^TC =B^TA^TC^T+BA^TC   \text{(5)}$</p>
-<p>因此就有：</p>
-<p>$<br>\begin{aligned}<br>\nabla_\theta J(\theta) &amp;= \nabla_\theta \frac 12 (X\theta - \vec{y})^T (X\theta - \vec{y}) \<br>&amp;= \frac  12 \nabla_\theta (\theta ^TX^TX\theta -\theta^T X^T \vec{y} - \vec{y} ^TX\theta +\vec{y}^T \vec{y})\<br>&amp;= \frac  12 \nabla_\theta tr(\theta ^TX^TX\theta -\theta^T X^T \vec{y} - \vec{y} ^TX\theta +\vec{y}^T \vec{y})\<br>&amp;= \frac  12 \nabla_\theta (tr \theta ^TX^TX\theta - 2tr\vec{y} ^T X\theta)\<br>&amp;= \frac  12 (X^TX\theta+X^TX\theta-2X^T\vec{y}) \<br>&amp;= X^TX\theta-X^T\vec{y}\<br>\end{aligned}<br>$</p>
-<p>在第三步，我们用到了一个定理，也就是一个实数的迹就是这个实数本身；第四步用到了 $trA = trA^T$ 这个定理；第五步用到了等式（5），其中 $A^T =\theta, B=B^T =X^TX, C=I$,还用到了等式 (1)。要让 J 取得最小值，就设导数为 0 ，然后就得到了下面的法线方程（normal equations）：</p>
-<p>$ X^TX\theta =X^T\vec{y}$</p>
-<p>所以让 $J(\theta)$ 取值最小的 θ 就是$\theta = (X^TX)^{-1}X^T\vec{y}$</p>
-<h4 id="3-概率解释（Probabilistic-interpretation）"><a href="#3-概率解释（Probabilistic-interpretation）" class="headerlink" title="3 概率解释（Probabilistic interpretation）"></a>3 概率解释（Probabilistic interpretation）</h4><p>在面对回归问题的时候，可能有这样一些疑问，就是为什么选择线性回归，尤其是为什么而是最小二乘法成本函数 J ？在本节里，我们会给出一系列的概率基本假设，基于这些假设，就可以推出最小二乘法回归是一种非常自然的算法。<br>首先咱们假设目标变量和输入值存在下面这种等量关系：</p>
-<p>$ y^{(i)}=\theta^T x^{(i)}+ \epsilon ^{(i)}$</p>
-<p>上式中 $ \epsilon ^{(i)}$ 是误差项，用于存放由于建模所忽略的变量导致的效果 (比如可能某些特征对于房价的影响很明显，但我们做回归的时候忽略掉了)或者随机的噪音信息（random noise）。进一步假设 $ \epsilon ^{(i)}$   是独立同分布的 (IID ，independently and identically distributed) ，服从高斯分布（Gaussian distribution ，也叫正态分布 Normal distribution），其平均值为 0，方差（variance）为 $\sigma ^2$。这样就可以把这个假设写成 $ \epsilon ^{(i)} ∼ N (0, \sigma ^2)$ 。然后 $ \epsilon ^{(i)} $  的密度函数就是：</p>
-<p>$ p(\epsilon ^{(i)} )= \frac 1{\sqrt{2\pi\sigma}} exp (- \frac  {(\epsilon ^{(i)} )^2}{2\sigma^2})$</p>
-<p>这意味着存在下面的等量关系：</p>
-<p>$ p(y ^{(i)} |x^{(i)}; \theta)= \frac 1{\sqrt{2\pi\sigma}} exp (- \frac  {(y^{(i)} -\theta^T x ^{(i)} )^2}{2\sigma^2})$</p>
-<p>这里的记号 $ p(y ^{(i)} |x^{(i)}; \theta)$ 表示的是这是一个对于给定 $x^{(i)}$ 的 $y^{(i)}$ 的分布，用θ 进行了参数化。 注意这里咱们不能用 $\theta (p(y ^{(i)} |x^{(i)},\theta))$来当做条件，因为 θ 并不是一个随机变量。这个 $y^{(i)}$  的分布还可以写成$y^{(i)} | x^{(i)}; \theta ∼ N (\theta ^T x^{(i)}, \sigma^2)$。<br>给定一个 x 为设计矩阵（design matrix），包含了全部$x^{(i)}$，然后再给定 θ，那么 $y^{(i)}$ 的分布是什么？数据的概率以$p (\vec{y}|X;\theta )$ 的形式给出。在θ取某个固定值的情况下，这个等式通常可以看做是一个 $\vec{y}$ 的函数（也可以看成是 x 的函数）。当我们要把它当做 θ 的函数的时候，就称它为 **似然函数（likelihood function</p>
-<p>$<br>\begin{aligned}<br>L(\theta) &amp;=L(\theta;X,\vec{y})\<br>&amp;=p(\vec{y}|X;\theta)\<br>\end{aligned}<br>$</p>
-<p>结合之前对 $\epsilon^{(i)}$ 的独立性假设 (这里对$y^{(i)}$ 以及给定的 $x^{(i)}$ 也都做同样假设)，就可以把上面这个等式改写成下面的形式：</p>
-<p>$<br>\begin{aligned}<br>L(\theta) &amp;=\prod ^m _{i=1}p(\vec{y}|X;\theta)\<br>&amp;=\prod ^m _{i=1} \frac  1{\sqrt {2\pi \sigma }} exp(- \frac {(y^{(i)}-\theta^T x^{(i)})^2}{2\sigma^2})\<br>\end{aligned}<br>$</p>
-<p>现在，给定了$y^{(i)})$ 和 $x^{(i)})$之间关系的概率模型了，用什么方法来选择咱们对参数 θ 的最佳猜测呢？最大似然法（maximum likelihood）告诉我们要选择能让数据的似然函数尽可能大的 θ。也就是说，咱们要找的 θ 能够让函数 $L(\theta)$ 取到最大值。<br>除了找到 $L(\theta)$ 最大值，我们还以对任何严格递增的 $L(\theta)$ 的函数求最大值。如果我们不直接使用 $L(\theta)$，而是使用对数函数，来找对数函数 $l(\theta)$ 的最大值，那这样对于求导来说就简单了一些：</p>
-<p>$\begin{aligned}<br>l(\theta) &amp;=\log L(\theta)\<br>&amp;=\log \prod ^m _{i=1} \frac  1{\sqrt {2\pi \sigma }} exp(- \frac {(y^{(i)}-\theta^T x^{(i)})^2}{2\sigma^2})\<br>&amp;= \sum ^m <em>{i=1} \frac  1{\sqrt {2\pi \sigma }} exp(- \frac {(y^{(i)}-\theta^T x^{(i)})^2}{2\sigma^2})\<br>&amp;= m \times \log \frac  1{\sqrt {2\pi \sigma}}- \frac 1{\sigma^2}\times \frac 12 \sum^m</em>{i=1} (y^{(i)}-\theta^Tx^{(i)})^2\<br>\end{aligned}<br>$</p>
-<p>因此，对 $l(\theta)$ 取得最大值也就意味着下面这个子式取到最小值：</p>
-<p>$ \frac 12 \sum^m _{i=1} (y^{(i)}-\theta^Tx^{(i)})^2$</p>
-<p>到这里我们能发现这个子式实际上就是 $J(\theta)$，也就是最原始的最小二乘成本函数（least-squares cost function）。总结一下也就是：在对数据进行概率假设的基础上，最小二乘回归得到的 θ 和最大似然法估计的 θ 是一致的。所以这是一系列的假设，其前提是认为最小二乘回归（least-squares regression）能够被判定为一种非常自然的方法，这种方法正好就进行了最大似然估计（maximum likelihood estimation）。（要注意，对于验证最小二乘法是否为一个良好并且合理的过程来说，这些概率假设并不是必须的，此外可能（也确实）有其他的自然假设能够用来评判最小二乘方法。）<br>另外还要注意，在刚才的讨论中，我们最终对 θ 的选择并不依赖 $\sigma^2$，而且也确实在不知道 $\sigma^2$ 的情况下就已经找到了结果。稍后我们还要对这个情况加以利用，到时候我们会讨论指数族以及广义线性模型。</p>
-<h4 id="3-概率解释（Probabilistic-interpretation）-1"><a href="#3-概率解释（Probabilistic-interpretation）-1" class="headerlink" title="3 概率解释（Probabilistic interpretation）"></a>3 概率解释（Probabilistic interpretation）</h4><p>4 局部加权线性回归（Locally weighted linear regression）</p>
-<p>假如问题还是根据从实数域内取值的 $x ∈ R$ 来预测 y 。左下角的图显示了使用 $y = \theta_0 + \theta_1x$ 来对一个数据集进行拟合。我们明显能看出来这个数据的趋势并不是一条严格的直线，所以用直线进行的拟合就不是好的方法。</p>
-<p><img src="https://raw.githubusercontent.com/Kivy-CN/Stanford-CS-229-CN/master/img/cs229note1f5.png" alt=""></p>
-<p>那么这次不用直线，而增加一个二次项，用$y = \theta_0 + \theta_1x +\theta_2x^2$ 来拟合。(看中间的图) 很明显，我们对特征补充得越多，效果就越好。不过，增加太多特征也会造成危险的：最右边的图就是使用了五次多项式 $y = \sum^5_{j=0} \theta_jx^j$ 来进行拟合。看图就能发现，虽然这个拟合曲线完美地通过了所有当前数据集中的数据，但我们明显不能认为这个曲线是一个合适的预测工具，比如针对不同的居住面积 x 来预测房屋价格 y。先不说这些特殊名词的正规定义，咱们就简单说，最左边的图像就是一个<strong>欠拟合（under fitting）</strong>的例子，比如明显能看出拟合的模型漏掉了数据集中的结构信息；而最右边的图像就是一个<strong>过拟合（over fitting）</strong>的例子。（在本课程的后续部分中，当我们讨论到关于学习理论的时候，会给出这些概念的标准定义，也会给出拟合程度对于一个猜测的好坏检验的意义。）</p>
-<p>正如前文谈到的，也正如上面这个例子展示的，一个学习算法要保证能良好运行，特征的选择是非常重要的。（等到我们讲模型选择的时候，还会看到一些算法能够自动来选择一个良好的特征集。）在本节，咱们就简要地讲一下局部加权线性回归（locally weighted linear regression ，缩写为LWR），这个方法是假设有足够多的训练数据，对不太重要的特征进行一些筛选。这部分内容会比较简略，因为在作业中要求学生自己去探索一下LWR 算法的各种性质了。<br>在原始版本的线性回归算法中，要对一个查询点 x 进行预测，比如要衡量$h(x)$，要经过下面的步骤：</p>
-<ol>
-<li>使用参数 θ 进行拟合，让数据集中的值与拟合算出的值的差值平方$(y^{(i)} − \theta^T x^{(i)} )^2$最小（最小二乘法的思想）；</li>
-<li>输出 $\theta^T x$ 。</li>
-</ol>
-<p>相应地，在 LWR 局部加权线性回归方法中，步骤如下：</p>
-<ol>
-<li>使用参数 θ 进行拟合，让加权距离$w^{(i)}(y^{(i)} − \theta^T x^{(i)} )^2$ 最小；</li>
-<li>输出 $\theta^T x$。</li>
-</ol>
-<p>上面式子中的 $w^{(i)}$ 是非负的权值。直观点说就是，如果对应某个i 的权值 $w^{(i)}$ 特别大，那么在选择拟合参数 θ 的时候，就要尽量让这一点的 $(y^{(i)} − \theta^T x^{(i)} )^2$ 最小。而如果权值$w^{(i)}$  特别小，那么这一点对应的$(y^{(i)} − \theta^T x^{(i)} )^2$ 就基本在拟合过程中忽略掉了。<br>对于权值的选取可以使用下面这个比较标准的公式：</p>
-<p>$w^{(i)} = exp(- \frac {(x^{(i)}-x)^2}{2\tau^2})$</p>
-<p>如果 x 是有值的向量，那就要对上面的式子进行泛化，得到的是<br>$w^{(i)} = exp(− \frac {(x^{(i)}-x)^T(x^{(i)}-x)}{2\tau^2})$，<br>或者:$w^{(i)} = exp(− \frac {(x^{(i)}-x)^T\Sigma ^{-1}(x^{(i)}-x)}{2})$，这就看是选择用$\tau$ 还是 $\Sigma$。</p>
-<p>要注意的是，权值是依赖每个特定的点 x 的，而这些点正是我们要去进行预测评估的点。此外，如果 $|x^{(i)} − x|$ 非常小，那么权值 $w^{(i)} $就接近 1；反之如果 $|x^{(i)} − x|$ 非常大，那么权值 $w^{(i)} $就变小。所以可以看出， θ 的选择过程中，查询点 x 附近的训练样本有更高得多的权值。（θis chosen giving a much higher “weight” to the (errors on) training examples close to the query point x.）（还要注意，当权值的方程的形式跟高斯分布的密度函数比较接近的时候，权值和高斯分布并没有什么直接联系，尤其是当权值不是随机值，且呈现正态分布或者其他形式分布的时候。）<br>随着点$x^{(i)} $ 到查询点 x 的距离降低，训练样本的权值的也在降低，参数$\tau$  控制了这个降低的速度；$\tau$也叫做<strong>带宽参数</strong>，这个也是在你的作业中需要来体验和尝试的一个参数。<br>局部加权线性回归是咱们接触的第一个非参数算法。而更早之前咱们看到的无权重的线性回归算法就是一种参数学习算法，因为有固定的有限个数的参数（也就是 $\theta_i$ ），这些参数用来拟合数据。我们对 $\theta_i$ 进行了拟合之后，就把它们存了起来，也就不需要再保留训练数据样本来进行更进一步的预测了。与之相反，如果用局部加权线性回归算法，我们就必须一直保留着整个训练集。这里的非参数算法中的 非参数“non-parametric” 是粗略地指：为了呈现出假设 h 随着数据集规模的增长而线性增长，我们需要以一定顺序保存一些数据的规模。（The term “non-parametric” (roughly) refers to the fact that the amount of stuff we need to keep in order to represent the hypothesis h grows linearly with the size of the training set. ）</p>
-<h3 id="第二部分-分类和逻辑回归（Classification-and-logistic-regression）"><a href="#第二部分-分类和逻辑回归（Classification-and-logistic-regression）" class="headerlink" title="第二部分 分类和逻辑回归（Classification and logistic regression）"></a>第二部分 分类和逻辑回归（Classification and logistic regression）</h3><p>接下来咱们讲一下分类的问题。分类问题其实和回归问题很像，吃不过我们现在要来预测的 y 的值只局限于少数的若干个离散值。眼下咱们首先关注的是二值化分类问题，也就是说咱们要判断的 y 只有两个取值，0 或者 1。（咱们这里谈到的大部分内容也都可以扩展到多种类的情况。）例如，假如要建立一个垃圾邮件筛选器，那么就可以用 $x^{(i)}$ 表示一个邮件中的若干特征，然后如果这个邮件是垃圾邮件，y 就设为1，否则 y 为 0。0 也可以被称为<strong>消极类别（negative class）</strong>，而 1 就成为<strong>积极类别（positive class</strong>），有的情况下也分别表示成“-” 和 “+”。对于给定的一个 $x^{(i)}$，对应的$y^{(i)}$也称为训练样本的<strong>标签（label）</strong>。</p>
-<h4 id="5-逻辑回归（-logistic-regression）"><a href="#5-逻辑回归（-logistic-regression）" class="headerlink" title="5 逻辑回归（\logistic regression）"></a>5 逻辑回归（\logistic regression）</h4><p>我们当然也可以还按照之前的线性回归的算法来根据给定的 x 来预测 y，只要忽略掉 y 是一个散列值就可以了。然而，这样构建的例子很容易遇到性能问题，这个方法运行效率会非常低，效果很差。而且从直观上来看，$h_\theta(x)$ 的值如果大于1 或者小于0 就都没有意义了，因为咱们已经实现都确定了 $y ∈ {0, 1}$，就是说 y 必然应当是 0 和 1 这两个值当中的一个。<br>所以咱们就改变一下假设函数$h_\theta (x)$ 的形式，来解决这个问题。比如咱们可以选择下面这个函数：</p>
-<p>$ h_\theta(x) = g(\theta^T x) = \frac  1{1+e^{-\theta^Tx}}$</p>
-<p>其中有：</p>
-<p>$ g(z)= \frac 1 {1+e^{-z}}$</p>
-<p>这个函数叫做<strong>逻辑函数 （\logistic function）</strong> ，或者也叫<strong>双弯曲S型函数（sigmoid function</strong>）。下图是 $g(z)$ 的函数图像：</p>
-<p><img src="https://raw.githubusercontent.com/Kivy-CN/Stanford-CS-229-CN/master/img/cs229note1f6.png" alt=""></p>
-<p>注意到没有，当$z\to +\infty$  的时候 $g(z)$ 趋向于1，而当$z\to -\infty$ 时$g(z)$ 趋向于0。此外，这里的这个 $g(z)$ ，也就是 $h(x)$，是一直在 0 和 1 之间波动的。然后咱们依然像最开始那样来设置 $x_0 = 1$，这样就有了：<br>$ \theta^T x =\theta_0 +\sum^n_{j=1}\theta_jx_j$</p>
-<p>现在咱们就把 $g$ 作为选定的函数了。当然其他的从0到1之间光滑递增的函数也可以使用，不过后面我们会了解到选择 $g$ 的一些原因（到时候我们讲广义线性模型 GLMs，那时候还会讲生成学习算法，generative learning algorithms），对这个逻辑函数的选择是很自然的。再继续深入之前，下面是要讲解的关于这个 S 型函数的导数，也就是 $g′$ 的一些性质：</p>
-<p>$<br>\begin{aligned}<br>\dot{g}(z) &amp; = \frac d{dz} \times \frac 1{1+e^{-z}}\<br>&amp; = \frac  1{(1+e^{-z})^2} \times (e^{-z}))\<br>&amp; = \frac  1{(1+e^{-z})^2} \times (1- \frac 1{(1+e^{-z})})\<br>&amp; = g(z)(1-g(z))\<br>\end{aligned}<br>$</p>
-<p>那么，给定了逻辑回归模型了，咱们怎么去拟合一个合适的 θ 呢？我们之前已经看到了在一系列假设的前提下，最小二乘法回归可以通过最大似然估计来推出，那么接下来就给我们的这个分类模型做一系列的统计学假设，然后用最大似然法来拟合参数吧。</p>
-<p>首先假设：</p>
-<p>$<br>\begin{aligned}<br>P(y=1|x;\theta)=h_{\theta}(x)\<br>P(y=0|x;\theta)=1- h_{\theta}(x)\<br>\end{aligned}<br>$</p>
-<p>更简洁的写法是：</p>
-<p>$ p(y|x;\theta)=(h_\theta (x))^y(1- h_\theta (x))^{1-y}$</p>
-<p>假设 m 个训练样本都是各自独立生成的，那么就可以按如下的方式来写参数的似然函数：</p>
-<p>$<br>\begin{aligned}<br>L(\theta) &amp;= p(\vec{y}| X; \theta)\<br>&amp;= \prod^m_{i=1}  p(y^{(i)}| x^{(i)}; \theta)\<br>&amp;= \prod^m_{i=1} (h_\theta (x^{(i)}))^{y^{(i)}}(1-h_\theta (x^{(i)}))^{1-y^{(i)}} \<br>\end{aligned}<br>$</p>
-<p>然后还是跟之前一样，取个对数就更容易计算最大值：</p>
-<p>$<br>\begin{aligned}<br>l(\theta) &amp;=\log L(\theta) \<br>&amp;= \sum^m_{i=1} y^{(i)} \log h(x^{(i)})+(1-y^{(i)})\log (1-h(x^{(i)}))<br>\end{aligned}<br>$</p>
-<p>怎么让似然函数最大？就跟之前咱们在线性回归的时候用了求导数的方法类似，咱们这次就是用<strong>梯度上升法（gradient ascent）</strong>。还是写成向量的形式，然后进行更新，也就是$ \theta := \theta +\alpha \nabla _\theta l(\theta)$  。（注意更新方程中用的是加号而不是减号，因为我们现在是在找一个函数的最大值，而不是找最小值了。）还是先从只有一组训练样本$(x,y)$ 来开始，然后求导数来退出随机梯度上升规则：</p>
-<p>$<br>\begin{aligned}<br>\frac  {\partial}{\partial \theta_j} l(\theta) &amp;=(y\times \frac  1 {g(\theta ^T x)}  - (1-y)\times \frac  1 {1- g(\theta ^T x)}   )\frac  {\partial}{\partial \theta_j}g(\theta ^Tx) \<br>&amp;= (y\times \frac  1 {g(\theta ^T x)}  - (1-y)\times \frac  1 {1- g(\theta ^T x)}   )  g(\theta^Tx)(1-g(\theta^Tx)) \frac  {\partial}{\partial \theta_j}\theta ^Tx \<br>&amp;= (y(1-g(\theta^Tx) ) -(1-y) g(\theta^Tx)) x_j\<br>&amp;= (y-h_\theta(x))x_j<br>\end{aligned}<br>$<br>上面的式子里，我们用到了对函数求导的定理 $ g’ (z)= g(z)(1-g(z))$  。然后就得到了随机梯度上升规则：</p>
-<p>$ \theta_j := \theta_j + \alpha (y^{(i)}-h_\theta (x^{(i)}))x_j^{(i)}$</p>
-<p>如果跟之前的 LMS 更新规则相对比，就能发现看上去挺相似的；不过这并不是同一个算法，因为这里的$h_\theta(x^{(i)})$现在定义成了一个 $\theta^Tx^{(i)}$  的非线性函数。尽管如此，我们面对不同的学习问题使用了不同的算法，却得到了看上去一样的更新规则，这个还是有点让人吃惊。这是一个巧合么，还是背后有更深层次的原因呢？在我们学到了 GLM 广义线性模型的时候就会得到答案了。（另外也可以看一下 习题集1 里面 Q3 的附加题。）</p>
-<h4 id="6-题外话-感知器学习算法（The-perceptron-learning-algorithm）"><a href="#6-题外话-感知器学习算法（The-perceptron-learning-algorithm）" class="headerlink" title="6 题外话: 感知器学习算法（The perceptron learning algorithm）"></a>6 题外话: 感知器学习算法（The perceptron learning algorithm）</h4><p>现在咱们来岔开一下话题，简要地聊一个算法，这个算法的历史很有趣，并且之后在我们讲学习理论的时候还要讲到它。设想一下，对逻辑回归方法修改一下，“强迫”它输出的值要么是 0 要么是 1。要实现这个目的，很自然就应该把函数 $g$ 的定义修改一下，改成一个<strong>阈值函数（threshold function）</strong>：</p>
-<p>$<br>g(z)= \begin{cases} 1, &amp;  {if  z \geq 0 } \<br>0, &amp;  {if  z &lt; 0 } \end{cases}<br>$</p>
-<p>如果我们还像之前一样令 $h_\theta(x) = g(\theta^T x)$，但用刚刚上面的阈值函数作为 $g$ 的定义，然后如果我们用了下面的更新规则：</p>
-<p>$ \theta_j := \theta_j +\alpha(y^{(i)}-h_\theta (x^{(i)}))x_j^{(i)}$</p>
-<p>这样我们就得到了感知器学习算法。<br>在 1960 年代，这个“感知器（perceptron）”被认为是对大脑中单个神经元工作方法的一个粗略建模。鉴于这个算法的简单程度，这个算法也是我们后续在本课程中讲学习理论的时候的起点。但一定要注意，虽然这个感知器学习算法可能看上去表面上跟我们之前讲的其他算法挺相似，但实际上这是一个和逻辑回归以及最小二乘线性回归等算法在种类上都完全不同的算法；尤其重要的是，很难对感知器的预测赋予有意义的概率解释，也很难作为一种最大似然估计算法来推出感知器学习算法。</p>
-<h4 id="7-取-l-theta-最大值的另外一个算法"><a href="#7-取-l-theta-最大值的另外一个算法" class="headerlink" title="7 取 $l(\theta)$ 最大值的另外一个算法"></a>7 取 $l(\theta)$ 最大值的另外一个算法</h4><p>再回到用 S 型函数 $g(z)$ 来进行逻辑回归的情况，咱们来讲一个让 $l(\theta)$ 取最大值的另一个算法。<br>开始之前，咱们先想一下求一个方程零点的牛顿法。假如我们有一个从实数到实数的函数 $f:R \to R$，然后要找到一个 θ ，来满足 $f(\theta)=0$，其中 $\theta∈R$ 是一个实数。牛顿法就是对 θ 进行如下的更新：</p>
-<p>$\theta := \theta - \frac {f(\theta)}{f’(\theta)}$</p>
-<p>这个方法可以通过一个很自然的解释，我们可以把它理解成用一个线性函数来对函数 $f$ 进行逼近，这条直线是 $f$ 的切线，而猜测值是 θ，解的方法就是找到线性方程等于零的点，把这一个零点作为 θ 设置给下一次猜测，然后依次类推。</p>
-<p>下面是对牛顿法的图解：<br><img src="https://raw.githubusercontent.com/Kivy-CN/Stanford-CS-229-CN/master/img/cs229note1f7.png" alt=""></p>
-<p>在最左边的图里面，可以看到函数 $f$ 就是沿着 $y=0$ 的一条直线。这时候是想要找一个 θ 来让 $f(\theta)=0$。这时候发现这个 θ 值大概在 $1.3$ 左右。加入咱们猜测的初始值设定为 $\theta=4.5$。牛顿法就是在 $\theta=4.5$ 这个位置画一条切线（中间的图）。这样就给出了下一个 θ 猜测值的位置，也就是这个切线的零点，大概是$2.8$。最右面的图中的是再运行一次这个迭代产生的结果，这时候 θ 大概是$1.8$。就这样几次迭代之后，很快就能接近 $\theta=1.$3。</p>
-<p>牛顿法的给出的解决思路是让 $f(\theta) = 0$ 。如果咱们要用它来让函数 $l$ 取得最大值能不能行呢？函数 $l$ 的最大值的点应该对应着是它的导数$l′(\theta)$ 等于零的点。所以通过令$f(\theta) = l′(\theta)$，咱们就可以同样用牛顿法来找到 $l$ 的最大值，然后得到下面的更新规则：</p>
-<p>$\theta := \theta - \frac {l’(\theta)}{l’’(\theta)}$</p>
-<p>(扩展一下，额外再思考一下: 如果咱们要用牛顿法来求一个函数的最小值而不是最大值，该怎么修改？)</p>
-<p>最后，在咱们的逻辑回归背景中，θ 是一个有值的向量，所以我们要对牛顿法进行扩展来适应这个情况。牛顿法进行扩展到多维情况，也叫牛顿-拉普森法（Newton-Raphson method），如下所示：</p>
-<p>$\theta := \theta - H^{-1}\nabla_\theta l(\theta)$</p>
-<p>上面这个式子中的 $\nabla_\theta l(\theta)$和之前的样例中的类似，是关于 $\theta_i$ 的 $l(\theta)$ 的偏导数向量；而 h 是一个 $n\times n$ 矩阵 ,实际上如果包含截距项的话，应该是, $(n + 1)\times (n + 1)$，也叫做 Hessian, 其详细定义是：</p>
-<p>$ H_{ij}= \frac {\partial^2 l(\theta)}{\partial \theta_i \partial \theta_j}$</p>
-<p>牛顿法通常都能比（批量）梯度下降法收敛得更快，而且达到最小值所需要的迭代次数也低很多。然而，牛顿法中的单次迭代往往要比梯度下降法的单步耗费更多的性能开销，因为要查找和转换一个  $n\times n$的 Hessian 矩阵；不过只要这个 $n$ 不是太大，牛顿法通常就还是更快一些。当用牛顿法来在逻辑回归中求似然函数$l(\theta)$ 的最大值的时候，得到这一结果的方法也叫做Fisher评分（Fisher scoring）。</p>
-<h3 id="第三部分-广义线性模型-Generalized-Linear-Models"><a href="#第三部分-广义线性模型-Generalized-Linear-Models" class="headerlink" title="第三部分 广义线性模型 Generalized Linear Models"></a>第三部分 广义线性模型 Generalized Linear Models</h3><blockquote>
-<p>注：本节展示的内容受以下两份作品的启发：Michael I. Jordan, Learning in graphical models (unpublished book draft), 以及 McCullagh and Nelder, Generalized Linear Models (2nd ed.)。</p>
-</blockquote>
-<p>到目前为止，我们看过了回归的案例，也看了一个分类案例。在回归的案例中，我们得到的函数是 $y|x; \theta ∼ N (\mu, \sigma^2)$；而分类的案例中，函数是 $y|x; \theta ∼ Bernoulli(\phi)$，这里面的$\mu$ 和 φ 分别是 x 和 θ 的某种函数。在本节，我们会发现这两种方法都是一个更广泛使用的模型的特例，这种更广泛使用的模型就叫做广义线性模型。我们还会讲一下广义线性模型中的其他模型是如何推出的，以及如何应用到其他的分类和回归问题上。</p>
-<h4 id="8-指数族-The-exponential-family"><a href="#8-指数族-The-exponential-family" class="headerlink" title="8 指数族 The exponential family"></a>8 指数族 The exponential family</h4><p>在学习 GLMs 之前，我们要先定义一下指数组分布（exponential family distributions）。如果一个分布能用下面的方式来写出来，我们就说这类分布属于指数族：</p>
-<p>$ p(y;\eta) =b(y)exp(\eta^TT(y)-a(\eta)) \text{(6)}$</p>
-<p>上面的式子中，η 叫做此分布的自然参数（natural parameter，也叫典范参数 canonical parameter） ； $T(y)$ 叫做充分统计量（sufficient statistic），我们目前用的这些分布中通常 $T (y) = y$；而 $a(\eta)$ 是一个对数分割函数（log partition function）。$e^{−a(\eta)}$ 这个量本质上扮演了归一化常数（normalization constant）的角色，也就是确保 $p(y; \eta)$ 的总和或者积分等于1。</p>
-<p>对 $T$, A 和 B 的固定选择，就定义了一个用 η 进行参数化的分布族（family，或者叫集 set）；通过改变 \eta，我们就能得到这个分布族中的不同分布。<br>现在咱们看到的伯努利（Bernoulli）分布和高斯（Gaussian）分布就都属于指数分布族。伯努利分布的均值是φ，也写作 $Bernoulli(\phi)$，确定的分布是 $y ∈ {0, 1}$，因此有 $p(y = 1; \phi) = \phi$; $p(y = 0;\phi) = 1−\phi$。这时候只要修改φ，就能得到一系列不同均值的伯努利分布了。现在我们展示的通过修改φ,而得到的这种伯努利分布，就属于指数分布族；也就是说，只要给定一组 $T$，A 和 B，就可以用上面的等式(6)来确定一组特定的伯努利分布了。<br>我们这样来写伯努利分布：</p>
-<p>$\begin{aligned}<br>p(y;\phi) &amp; = \phi ^y(1-\phi)^{1-y}\<br>&amp; = exp(y \log \phi + (1-y)\log(1-\phi))\<br>&amp; = exp( (log (\frac {\phi}{1-\phi}))y+\log (1-\phi) )\<br>\end{aligned}$</p>
-<p>因此，自然参数（natural parameter）就给出了，即 $\eta = log (\frac   \phi {1 − \phi})$。 很有趣的是，如果我们翻转这个定义，用η 来解 φ 就会得到 $\phi = 1/ (1 + e−\eta )$。这正好就是之前我们刚刚见到过的 S型函数（sigmoid function）！ 在我们把逻辑回归作为一种广义线性模型（GLM）的时候还会遇到这个情况。</p>
-<p>$\begin{aligned}<br>T(y) &amp;= y \<br>a( \eta) &amp; = - \log (1- \phi) \<br>&amp; = \log {(1+ e^ \eta)}\<br>b(y)&amp;=1<br>\end{aligned}$</p>
-<p>上面这组式子就表明了伯努利分布可以写成等式(6)的形式，使用一组合适的$T$， A 和 B。<br>接下来就看看高斯分布吧。还记得吧，在推导线性回归的时候，$\sigma%^2$ 的值对我们最终选择的 θ 和 $h_\theta(x)$ 都没有影响。所以我们可以给 $\sigma^2$ 取一个任意值。为了简化推导过程，就令$\sigma^2 = 1$。然后就有了下面的等式：</p>
-<p>$\begin{aligned}<br>p(y;\mu) &amp;= \frac 1{\sqrt{2\pi}} exp (- \frac  12 (y-\mu)^2) \<br>&amp; =  \frac 1{\sqrt{2\pi}} exp (- \frac  12 y^2) \times exp (\mu y -\frac  12 \mu^2) \<br>\end{aligned}$</p>
-<p>注：如果我们把 $\sigma^2$ 留作一个变量，高斯分布就也可以表达成指数分布的形式，其中 $\eta ∈ R^2$ 就是一个二维向量，同时依赖 $\mu$ 和 $\sigma$。然而，对于广义线性模型GLMs方面的用途， $\sigma^2$ 参数就也可以看成是对指数分布族的更泛化的定义： $p(y; \eta, \tau ) = b(a, \tau ) exp((\eta^T T (y) − a(\eta))/c(\tau))$。这里面的$\tau$ 叫做<strong>分散度参数（dispersion parameter）</strong>，对于高斯分布， $c(\tau) = \sigma^2$ ；不过上文中我们已经进行了简化，所以针对我们要考虑的各种案例，就不需要再进行更加泛化的定义了。<br>这样，我们就可以看出来高斯分布是属于指数分布族的，可以写成下面这样：</p>
-<p>$\begin{aligned}<br>\eta &amp; = \mu \<br>T(y) &amp; = y \<br>a(\eta) &amp; = \mu ^2 /2\<br>&amp; = \eta ^2 /2\<br>b(y) &amp; = (1/ \sqrt {2\pi })exp(-y^2/2)<br>\end{aligned}$</p>
-<p>指数分布族里面还有很多其他的分布：例如多项式分布（multinomial），这个稍后我们会看到；泊松分布（Poisson），用于对计数类数据进行建模，后面再问题集里面也会看到；$\gamma$和指数分布（the gamma and the exponential），这个用于对连续的、非负的随机变量进行建模，例如时间间隔；$\beta$和狄利克雷分布（the beta and the Dirichlet），这个是用于概率的分布；还有很多啦。在下一节里面，我们就来讲一讲对于建模的一个更通用的“方案”，其中的y (给定 x 和 θ) 可以是上面这些分布中的任意一种。</p>
-<h4 id="9-构建广义线性模型（Constructing-GLMs）"><a href="#9-构建广义线性模型（Constructing-GLMs）" class="headerlink" title="9 构建广义线性模型（Constructing GLMs）"></a>9 构建广义线性模型（Constructing GLMs）</h4><p>设想你要构建一个模型，来估计在给定的某个小时内来到你商店的顾客人数（或者是你的网站的页面访问次数），基于某些确定的特征 x ，例如商店的促销、最近的广告、天气、今天周几啊等等。我们已经知道泊松分布（Poisson distribution）通常能适合用来对访客数目进行建模。知道了这个之后，怎么来建立一个模型来解决咱们这个具体问题呢？非常幸运的是，泊松分布是属于指数分布族的一个分部，所以我们可以使用一个广义线性模型（Generalized Linear Model，缩写为 GLM）。在本节，我们讲一种对刚刚这类问题来构建广义线性模型的方法。</p>
-<p>进一步泛化，设想一个分类或者回归问题，要预测一些随机变量 y 的值，作为 x 的一个函数。要导出适用于这个问题的广义线性模型，就要对我们的模型、给定 x 下 y 的条件分布来做出以下三个假设：</p>
-<ol>
-<li>$y | x; \theta ∼ Exponential Family(\eta)$，即给定 x 和 θ, y 的分布属于指数分布族，是一个参数为 η 的指数分布。</li>
-<li>给定 x，目的是要预测对应这个给定 x 的 $T(y)$ 的期望值。咱们的例子中绝大部分情况都是 $T(y) = y$，这也就意味着我们的学习假设 h 输出的预测值 $h(x)$ 要满足 $h(x) = E[y|x]$。 (注意，这个假设通过对 $h_\theta(x)$ 的选择而满足，在逻辑回归和线性回归中都是如此。例如在逻辑回归中， $h_\theta (x) = [p (y = 1|x; \theta)] =[ 0 \times p (y = 0|x; \theta)+1\times p(y = 1|x;\theta)] = E[y|x;\theta]$。译者注：这里的$E[y|x$]应该就是对给定x时的y值的期望的意思。)</li>
-<li>自然参数 η 和输入值 x 是线性相关的，$\eta = \theta^T x$，或者如果 \eta 是有值的向量，则有$\eta_i = \theta_i^T x$。</li>
-</ol>
-<p>上面的几个假设中，第三个可能看上去证明得最差，所以也更适合把这第三个假设看作是一个我们在设计广义线性模型时候的一种 <strong>“设计选择 design choice”</strong>，而不是一个假设。那么这三个假设/设计，就可以用来推导出一个非常合适的学习算法类别，也就是广义线性模型 GLMs，这个模型有很多特别友好又理想的性质，比如很容易学习。<br>此外，这类模型对一些关于 y 的分布的不同类型建模来说通常效率都很高；例如，我们下面就将要简单介绍一些逻辑回归以及普通最小二乘法这两者如何作为广义线性模型来推出。</p>
-<h5 id="9-1-普通最小二乘法（Ordinary-Least-Squares）"><a href="#9-1-普通最小二乘法（Ordinary-Least-Squares）" class="headerlink" title="9.1 普通最小二乘法（Ordinary Least Squares）"></a>9.1 普通最小二乘法（Ordinary Least Squares）</h5><p>我们这一节要讲的是普通最小二乘法实际上是广义线性模型中的一种特例，设想如下的背景设置：目标变量 y（在广义线性模型的术语也叫做响应变量response variable）是连续的，然后我们将给定 x 的 y 的分布以高斯分布 $N(\mu, \tau2)$ 来建模，其中 $\mu$ 可以是依赖 x 的一个函数。这样，我们就让上面的指数分布族的$(\eta)$分布成为了一个高斯分布。在前面内容中我们提到过，在把高斯分布写成指数分布族的分布的时候，有$\mu = \eta$。所以就能得到下面的等式：</p>
-<p>$<br>\begin{aligned}<br>h_\theta(x)&amp; = E[y|x;\theta] \<br>&amp; = \mu \<br>&amp; = \eta \<br>&amp; = \theta^Tx\<br>\end{aligned}$</p>
-<p>第一行的等式是基于假设(2)；第二个等式是基于定理当 $y|x; \theta ∼ N (\mu, \sigma ^2)$，则 y 的期望就是 $\mu$ ；第三个等式是基于假设(1)，以及之前我们此前将高斯分布写成指数族分布的时候推导出来的性质 $\mu = \eta$；最后一个等式就是基于假设(3)。</p>
-<h5 id="9-2-逻辑回归（Logistic-Regression）"><a href="#9-2-逻辑回归（Logistic-Regression）" class="headerlink" title="9.2 逻辑回归（Logistic Regression）"></a>9.2 逻辑回归（Logistic Regression）</h5><p>接下来咱们再来看看逻辑回归。这里咱们还是看看二值化分类问题，也就是 $y ∈ {0, 1}$。给定了y 是一个二选一的值，那么很自然就选择伯努利分布（Bernoulli distribution）来对给定 x 的 y 的分布进行建模了。在我们把伯努利分布写成一种指数族分布的时候，有 $\phi = 1/ (1 + e^{−\eta})$。另外还要注意的是，如果有 $y|x; \theta ∼ Bernoulli(\phi)$，那么 $E [y|x; \theta] = \phi$。所以就跟刚刚推导普通最小二乘法的过程类似，有以下等式：</p>
-<p>$<br>\begin{aligned}<br>h_\theta(x)&amp; = E[y|x;\theta] \<br>&amp; = \phi \<br>&amp; = 1/(1+ e^{-\eta}) \<br>&amp; = 1/(1+ e^{-\theta^Tx})\<br>\end{aligned}$</p>
-<p>所以，上面的等式就给了给了假设函数的形式：$h\theta(x) = 1/ (1 + e−\theta^T x)$。如果你之前好奇咱们是怎么想出来逻辑回归的函数为$1/ (1 + e^{−z} )$，这个就是一种解答：一旦我们假设以 x 为条件的 y 的分布是伯努利分布，那么根据广义线性模型和指数分布族的定义，就会得出这个式子。</p>
-<p>再解释一点术语，这里给出分布均值的函数 $g$ 是一个关于自然参数的函数，$g(\eta) = E[T(y); \eta]$，这个函数也叫做规范响应函数（canonical response function），它的反函数 $g^{−1}$ 叫做规范链接函数（canonical link function）。因此，对于高斯分布来说，它的规范响应函数正好就是识别函数（identify function）；而对于伯努利分布来说，它的规范响应函数则是逻辑函数（logistic function）。</p>
-<blockquote>
-<p>注：很多教科书用 $g$ 表示链接函数，而用反函数$g^{−1}$ 来表示响应函数；但是咱们这里用的是反过来的，这是继承了早期的机器学习中的用法，我们这样使用和后续的其他课程能够更好地衔接起来。</p>
-</blockquote>
-<h5 id="9-3-Softmax-回归"><a href="#9-3-Softmax-回归" class="headerlink" title="9.3 Softmax 回归"></a>9.3 Softmax 回归</h5><p>咱们再来看一个广义线性模型的例子吧。设想有这样的一个分类问题，其中响应变量 y 的取值可以是 k 个值当中的任意一个，也就是 $y ∈ {1, 2, …, k}$。例如，我们这次要进行的分类就比把邮件分成垃圾邮件和正常邮件两类这种二值化分类要更加复杂一些，比如可能是要分成三类，例如垃圾邮件、个人邮件、工作相关邮件。这样响应变量依然还是离散的，但取值就不只有两个了。因此咱们就用多项式分布（multinomial distribution）来进行建模。<br>下面咱们就通过这种多项式分布来推出一个广义线性模型。要实现这一目的，首先还是要把多项式分布也用指数族分布来进行描述。<br>要对一个可能有 k 个不同输出值的多项式进行参数化，就可以用 k 个参数 $\phi_1,…,\phi_ k$ 来对应各自输出值的概率。不过这么多参数可能太多了，形式上也太麻烦，他们也未必都是互相独立的（比如对于任意一个$\phi_ i$中的值来说，只要知道其他的 $k-1$ 个值，就能知道这最后一个了，因为总和等于1，也就是$\sum^k_{i=1} \phi_i = 1$）。<br>所以咱们就去掉一个参数，只用 $k-1$ 个：$\phi_1,…,\phi_ {k-1}$  来对多项式进行参数化，其中$\phi_i = p (y = i; \phi)，p (y = k; \phi) = 1 −\sum ^{k−1}<em>{i=1}\phi</em> i$。为了表述起来方便，我们还要设 $\phi_k = 1 − \sum_{i=1}^{k−1} \phi_i$，但一定要注意，这个并不是一个参数，而是完全由其他的 $k-1$ 个参数来确定的。要把一个多项式表达成为指数组分布，还要按照下面的方式定义一个 $T (y) ∈ R^{k−1}$:</p>
-<p>$<br>T(1)=\left[<br>    \begin{array}{cc|c}<br>      1\<br>      0\<br>      0\<br>      \vdots \<br>      0\<br>    \end{array}<br>\right],<br>T(2)=\left[<br>    \begin{array}{cc|c}<br>      0\<br>      1\<br>      0\<br>      \vdots \<br>      0\<br>    \end{array}<br>\right],<br>T(3)=\left[<br>    \begin{array}{cc|c}<br>      0\<br>      0\<br>      1\<br>      \vdots \<br>      0\<br>    \end{array}<br>\right],<br>T(k-1)=\left[<br>    \begin{array}{cc|c}<br>      0\<br>      0\<br>      0\<br>      \vdots \<br>      1\<br>    \end{array}<br>\right],<br>T(k)=\left[<br>    \begin{array}{cc|c}<br>      0\<br>      0\<br>      0\<br>      \vdots \<br>      0\<br>    \end{array}<br>\right]<br>$</p>
-<p>这次和之前的样例都不一样了，就是不再有 $T(y) = y$；然后，$T(y)$ 现在是一个 $k – 1$ 维的向量，而不是一个实数了。向量 $T(y)$ 中的第 i 个元素写成$(T(y))_i$ 。<br>现在介绍一种非常有用的记号。指示函数（indicator function）$1{\cdot  }$，如果参数为真，则等于1；反之则等于0（$1{True} = 1, 1{False} = 0$）。例如1{2 = 3} = 0, 而1{3 = 5 − 2} = 1。所以我们可以把T (y) 和 y 的关系写成  $(T(y))i = 1{y = i}$。（往下继续阅读之前，一定要确保你理解了这里的表达式为真！）在此基础上，就有了$E[(T(y))i] = P (y = i) = \phi_i$。<br>现在一切就绪，可以把多项式写成指数族分布了。<br>写出来如下所示：</p>
-<p><img src="https://raw.githubusercontent.com/Kivy-CN/Stanford-CS-229-CN/master/img/cs229note1f8.png" alt=""></p>
-<p>其中：</p>
-<p>$\begin{aligned}<br>\eta &amp;= \left[<br>    \begin{array}{cc|c}<br>      \log (\phi _1/\phi _k)\<br>      \log (\phi _2/\phi _k)\<br>      \vdots \<br>      \log (\phi _{k-1}/\phi _k)\<br>    \end{array}<br>\right]\<br>a(\eta) &amp;= -\log (\phi _k)\<br>b(y) &amp;= 1\<br>\end{aligned}$</p>
-<p>这样咱们就把多项式方程作为一个指数族分布来写了出来。<br>与 $i (for  : i = 1, …, k)$对应的链接函数为：</p>
-<p>$ \eta_i =\log \frac  {\phi_i}{\phi_k}$</p>
-<p>为了方便起见，我们再定义 $\eta_k = \log (\phi_k/\phi_k) = 0$。对链接函数取反函数然后推导出响应函数，就得到了下面的等式：</p>
-<p>$\begin{aligned}<br>e^{\eta_i} &amp;= \frac {\phi_i}{\phi_k}\<br>\phi_k e^{\eta_i} &amp;= \phi_i \text{(7)}\<br>\phi_k  \sum^k_{i=1} e^{\eta_i}&amp;= \sum^k_{i=1}\phi_i= 1\<br>\end{aligned}$</p>
-<p>这就说明了$\phi_k = \frac  1 {\sum^k_{i=1} e^{\eta_i}}$，然后可以把这个关系代入回到等式(7)，这样就得到了响应函数：</p>
-<p>$ \phi_i = \frac  { e^{\eta_i} }{ \sum^k_{j=1} e^{\eta_j}}$</p>
-<p>上面这个函数从η 映射到了φ，称为 Softmax 函数。要完成我们的建模，还要用到前文提到的假设(3)，也就是 $\eta_i$ 是一个 x 的线性函数。所以就有了 $\eta_= \theta_i^Tx (for:i = 1, …, k − 1)$，其中的 $\theta_1, …, \theta_{k−1} ∈ R^{n+1}$ 就是我们建模的参数。为了表述方便，我们这里还是定义$\theta_k = 0$，这样就有 $\eta_k = \theta_k^T x = 0$，跟前文提到的相符。因此，我们的模型假设了给定 x 的 y 的条件分布为：</p>
-<p>$\begin{aligned}<br>p(y=i|x;\theta) &amp;=  \phi_i \<br>&amp;= \frac {e^{\eta_i}}{\sum^k_{j=1}e^{\eta_j}}\<br>&amp;=\frac {e^{\theta_i^Tx}}{\sum^k_{j=1}e^{\theta_j^Tx}}\text{(8)}\<br>\end{aligned}$</p>
-<p>这个适用于解决 $y ∈{1, …, k}$ 的分类问题的模型，就叫做 Softmax 回归。 这种回归是对逻辑回归的一种扩展泛化。<br>假设（hypothesis） h 则如下所示:</p>
-<p>$\begin{aligned}<br>h_\theta (x) &amp;= E[T(y)|x;\theta]\<br>&amp;= E \left[<br>    \begin{array}{cc|c}<br>      1(y=1)\<br>      1(y=2)\<br>      \vdots \<br>      1(y=k-1)\<br>    \end{array}|x;\theta<br>\right]\<br>&amp;= E \left[<br>    \begin{array}{cc|c}<br>      \phi_1\<br>      \phi_2\<br>      \vdots \<br>      \phi_{k-1}\<br>    \end{array}<br>\right]\<br>&amp;= E \left[<br>    \begin{array}{cc|c}<br>      \frac {exp(\theta_1^Tx)}{\sum^k_{j=1}exp(\theta_j^Tx)} \<br>      \frac {exp(\theta_2^Tx)}{\sum^k_{j=1}exp(\theta_j^Tx)} \<br>      \vdots \<br>      \frac {exp(\theta_{k-1}^Tx)}{\sum^k_{j=1}exp(\theta_j^Tx)} \<br>    \end{array}<br>\right]\<br>\end{aligned}$</p>
-<p>也就是说，我们的假设函数会对每一个 $i = 1,…,k$ ，给出 $p (y = y|x; \theta)$ 概率的估计值。（虽然咱们在前面假设的这个 $h_\theta(x)$ 只有 $k-1$ 维，但很明显 $p (y = y|x; \theta)$ 可以通过用 1 减去其他所有项目概率的和来得到，即$1− \sum^{k-1}_{i=1}\phi_i$。）</p>
-<p>最后，咱们再来讲一下参数拟合。和我们之前对普通最小二乘线性回归和逻辑回归的原始推导类似，如果咱们有一个有 m 个训练样本的训练集 ${(x^{(i)}, y^{(i)}); i = 1, …, m}$，然后要研究这个模型的参数 \thetai ，我们可以先写出其似然函数的对数：<br>$\begin{aligned}<br>l(\theta)&amp; =\sum^m_{i=1} \log p(y^{(i)}|x^{(i)};\theta)\<br>&amp;= \sum^m_{i=1} \prod ^k_{l=1}(\frac {e^{\theta_l^Tx^{(i)}}}{\sum^k_{j=1} e^{\theta_j^T x^{(i)}}})^{1(y^{(i)}=l)}\<br>\end{aligned}$</p>
-<p>要得到上面等式的第二行，要用到等式(8)中的设定 $p(y|x; \theta)$。现在就可以通过对 $l(\theta)$ 取最大值得到的 θ 而得到对参数的最大似然估计，使用的方法就可以用梯度上升法或者牛顿法了。</p>
-<script type="text/x-mathjax-config">
-    MathJax.Hub.Config({
-        tex2jax: {inlineMath: [['$', '$']]},
-        messageStyle: "none"
-    });
-</script>
-
           
+
+CS229 课程讲义中文翻译
+
+
+原作者
+翻译
+
+
+
+
+Andrew Ng  吴恩达
+CycleUser
+
+
+
+
+
+
+相关链接
+
+
+
+
+Github 地址
+
+
+知乎专栏
+
+
+斯坦福大学 CS229 课程网站
+
+
+网易公开课中文字幕视频
+
+
+
+第一章监督学习（Supervised learning
+          ...
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2018/11/28/cs229-1/#more" rel="contents">
+              Read more &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
         
       
     </div>
