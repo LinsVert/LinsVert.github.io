@@ -94,7 +94,7 @@
 <meta property="og:site_name" content="程序员小站">
 <meta property="og:description" content="本人最近离职换工作，面试了几家，记录下面试经历，以便查漏补缺。本人工作经验2年，求职岗位是PHP。 1 杭州蜂融 3.19 GG面试我的应该是一个leader，面得一般，本人好久没面试，感觉没抓住很多点。挂了。 1.1 mysql 如果表里有几亿条数据 分页怎么快速跳转到指定的页面 答了用主键ID,面试官说是用最小ID,没答好。 1.2 Redis 是单进程为什么能这么高效 忘记了。I/O复用。">
 <meta property="og:locale" content="zh-cn">
-<meta property="og:updated_time" content="2019-03-20T07:45:20.580Z">
+<meta property="og:updated_time" content="2019-03-20T07:50:54.076Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="PHP面经">
 <meta name="twitter:description" content="本人最近离职换工作，面试了几家，记录下面试经历，以便查漏补缺。本人工作经验2年，求职岗位是PHP。 1 杭州蜂融 3.19 GG面试我的应该是一个leader，面得一般，本人好久没面试，感觉没抓住很多点。挂了。 1.1 mysql 如果表里有几亿条数据 分页怎么快速跳转到指定的页面 答了用主键ID,面试官说是用最小ID,没答好。 1.2 Redis 是单进程为什么能这么高效 忘记了。I/O复用。">
@@ -387,7 +387,7 @@
 <p><code>return strtotime($str)</code></p>
 <p>面试官问 这个写法是否有问题，我对这个方法异常参数没用过，答得不好，感觉他不是很满意</p>
 <p>回来查了 strtotime 的文档 ，发现在 PHP 5.1.0 之后解析失败是返回 FALSE ，所以应该要判断下而不是直接返回。不该错。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">if (strtotime($str)) &#123;</span><br><span class="line">	retutn true;</span><br><span class="line">&#125; else &#123;</span><br><span class="line">	return false;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">if (strtotime($str)) &#123;</span><br><span class="line">	return true;</span><br><span class="line">&#125; else &#123;</span><br><span class="line">	return false;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>2.3 单例模式的使用举例</p>
 <p>问的是公司的单例模式的应用有哪些，公司代码底层的单例还真没注意，有点疏忽了，答了个mysql连接使用的单例，答得不好，单例在laravel中有 任务调度、异常捕获。</p>
 <p>2.4 接 2.3 问mysql在 nginx 使用的连接方式是fpm还是什么</p>
