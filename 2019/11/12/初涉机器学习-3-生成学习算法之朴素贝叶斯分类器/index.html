@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="en">
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-center-simple.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Learning,机器学习," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="分类问题和线性的问题有些区别，它的预测结果是离散的，比如判断一封邮件是否是垃圾邮件，它结果只可能是yes,no,今天带来的是基于概率来预测分类结果。而本篇文章使用的算法叫做朴素贝叶斯分类器，是基于朴素贝叶斯对于多特征参数的分类问题。贝叶斯定理就不细说了，大学概率论一般都应该学过，引用下 WIKI:">
+<meta property="og:type" content="article">
+<meta property="og:title" content="初涉机器学习--3.生成学习算法之朴素贝叶斯分类器">
+<meta property="og:url" content="https://blog.lindebiao.top/2019/11/12/%E5%88%9D%E6%B6%89%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0-3-%E7%94%9F%E6%88%90%E5%AD%A6%E4%B9%A0%E7%AE%97%E6%B3%95%E4%B9%8B%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%88%86%E7%B1%BB%E5%99%A8/index.html">
+<meta property="og:site_name" content="程序员小站">
+<meta property="og:description" content="分类问题和线性的问题有些区别，它的预测结果是离散的，比如判断一封邮件是否是垃圾邮件，它结果只可能是yes,no,今天带来的是基于概率来预测分类结果。而本篇文章使用的算法叫做朴素贝叶斯分类器，是基于朴素贝叶斯对于多特征参数的分类问题。贝叶斯定理就不细说了，大学概率论一般都应该学过，引用下 WIKI:">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://user-gold-cdn.xitu.io/2019/11/9/16e4f40ed213a0cd?w=728&h=476&f=png&s=86153">
+<meta property="og:image" content="https://user-gold-cdn.xitu.io/2019/11/12/16e5d934784439ca?w=755&h=258&f=png&s=43482">
+<meta property="og:image" content="https://user-gold-cdn.xitu.io/2019/11/12/16e5d5df08ba5488?w=725&h=483&f=png&s=156241">
+<meta property="og:image" content="https://user-gold-cdn.xitu.io/2019/11/12/16e5e3986d5586e4?w=321&h=97&f=png&s=43581">
+<meta property="og:image" content="https://user-gold-cdn.xitu.io/2019/11/12/16e5e3ac90717cc5?w=503&h=63&f=png&s=36969">
+<meta property="article:published_time" content="2019-11-12T07:48:09.000Z">
+<meta property="article:modified_time" content="2019-12-31T08:08:47.008Z">
+<meta property="article:author" content="LinsVert">
+<meta property="article:tag" content="Learning,机器学习">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://user-gold-cdn.xitu.io/2019/11/9/16e4f40ed213a0cd?w=728&h=476&f=png&s=86153">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://blog.lindebiao.top/2019/11/12/初涉机器学习-3-生成学习算法之朴素贝叶斯分类器/"/>
+
+
+
+
+
+  <title>初涉机器学习--3.生成学习算法之朴素贝叶斯分类器 | 程序员小站</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 4.2.0"><!-- hexo-inject:begin --><!-- hexo-inject:end --></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">程序员小站</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/%20" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/%20" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/%20" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/%20" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            Archives
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br />
+            
+            About
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://blog.lindebiao.top/2019/11/12/%E5%88%9D%E6%B6%89%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0-3-%E7%94%9F%E6%88%90%E5%AD%A6%E4%B9%A0%E7%AE%97%E6%B3%95%E4%B9%8B%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%88%86%E7%B1%BB%E5%99%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="LinsVert">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="程序员小站">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">初涉机器学习--3.生成学习算法之朴素贝叶斯分类器</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2019-11-12T15:48:09+08:00">
+                2019-11-12
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Learning-%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index">
+                    <span itemprop="name">Learning,机器学习</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h5 id="分类问题和线性的问题有些区别，它的预测结果是离散的，比如判断一封邮件是否是垃圾邮件，它结果只可能是yes-no-今天带来的是基于概率来预测分类结果。而本篇文章使用的算法叫做朴素贝叶斯分类器，是基于朴素贝叶斯对于多特征参数的分类问题。"><a href="#分类问题和线性的问题有些区别，它的预测结果是离散的，比如判断一封邮件是否是垃圾邮件，它结果只可能是yes-no-今天带来的是基于概率来预测分类结果。而本篇文章使用的算法叫做朴素贝叶斯分类器，是基于朴素贝叶斯对于多特征参数的分类问题。" class="headerlink" title="分类问题和线性的问题有些区别，它的预测结果是离散的，比如判断一封邮件是否是垃圾邮件，它结果只可能是yes,no,今天带来的是基于概率来预测分类结果。而本篇文章使用的算法叫做朴素贝叶斯分类器，是基于朴素贝叶斯对于多特征参数的分类问题。"></a>分类问题和线性的问题有些区别，它的预测结果是离散的，比如判断一封邮件是否是垃圾邮件，它结果只可能是yes,no,今天带来的是基于概率来预测分类结果。而本篇文章使用的算法叫做朴素贝叶斯分类器，是基于朴素贝叶斯对于多特征参数的分类问题。</h5><h5 id="贝叶斯定理就不细说了，大学概率论一般都应该学过，引用下-WIKI"><a href="#贝叶斯定理就不细说了，大学概率论一般都应该学过，引用下-WIKI" class="headerlink" title="贝叶斯定理就不细说了，大学概率论一般都应该学过，引用下 WIKI:"></a>贝叶斯定理就不细说了，大学概率论一般都应该学过，引用下 <a href="https://zh.wikipedia.org/wiki/%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%AE%9A%E7%90%86" target="_blank" rel="noopener">WIKI</a>:</h5><a id="more"></a>
+
+<p><img src="https://user-gold-cdn.xitu.io/2019/11/9/16e4f40ed213a0cd?w=728&h=476&f=png&s=86153" alt="贝叶斯定理"></p>
+<h4 id="1-引入内容"><a href="#1-引入内容" class="headerlink" title="1.引入内容:"></a>1.引入内容:</h4><p>简单地说，假设要求预测一个 <strong>未知邮件</strong> 是否是垃圾邮件，则我们需要一些已知的邮件,得到训练集来进行一些概率的统计,假定邮件里的文字特征是一些特定词汇 <strong>X</strong> (特征数量可能很多),那么结果是判断是否是垃圾邮件 <strong>Y</strong>,根据贝叶斯有:</p>
+<p>$$P(Y|X) = \frac{P(X|Y) * P(Y)}{P(X)}$$<br>但是如果有很多特征的时候（X种类很多），这个公式似乎就不好用了，因为特征之间可能存在概率关联，比如 $X_2$ 可能是基于 $X_1$ 的触发的概率下所触发的，<br>这个时候 $ X $ 的概率公式是：<br>$$ P(X_1,X_2,X_3…X_n|Y) = P(X_1|Y)P(X_2|Y,X_1)…P(X_n|Y,X_1…X_{n-1})$$<br>这个时候基于贝叶斯定理提出了一个叫做 <strong>朴素贝叶斯</strong> 的理论，理论里假设特征之间的概率是相互独立的，即上面的 $X_1$ 与 $ X_2 $相互独立，所以这样求多特征的概率也就相互独立了，所以特征 $X$的 <strong>概率</strong>：<br>$$ P(X|Y) = \Pi_{i=1}^n P(X_i|Y)$$<br>所以所有特征的联合后验概率(预测结果为j,比如 Y = 1是垃圾邮件，Y = 0 是正常邮件):<br>$$ P(Y=j|X) = \frac{\Pi_{i=1}^n P(X_i|Y=j) * P(Y)}{P(X_1,X_2…X_n)};(n 是特征的数量) $$<br>那么对于一个 Y 是一个多结果的分类，需要取得这几个类别中最大的后验概率 <em>（PS:因为只要比较概率大小，所以计算的时候计算分母中的先验概率 $P(X)$ 可以不计算的）</em>，即：<br>$$ arg; \max_Y ;P(Y|X) $$<br>就能给出一封邮件是否是垃圾邮件的结果。</p>
+<p>那么计算 $P(Y|X)$ 就得需要知道 $P(X|Y);P(Y);P(X)$的概率，这个应该比较简单，简单的概率计算就能得到，我们定义下参数， $i$ 为特征类别，比如邮件中特定词的数量，发件人，发件时间；$k$ 为特征具体内容,如 特定词数量为1，发件人是admin,发件时间为晚上7点；$j$为结果，如 j = 1是垃圾邮件，j = 0 是正常邮件; $z$ 是训练集数量</p>
+<p>$$ P(X_i=k|Y=j) =  \frac{\sum_{m=1}^{z} 1&lt;!–￼5–&gt;{\sum_{m=1}^{z}Y^m = j} $$</p>
+<p>$$ P(Y=j) =  \frac{\sum_{m=1}^{z} 1{Y^m = j}}{z} $$<br>其中方括号里的表示and,只有两者都ture才进入求和，<br>式子比较复杂，举个例子说明：<br>邮件里，发件时间在19：00为垃圾邮件的概率为：<br>$P(X_{发件时间} = 19:00|Y=垃圾邮件) = \frac{发件时间在7点并且是是垃圾邮件的数量}{所有垃圾邮件的数量}$</p>
+<p>特别地，如果要计算分母$P(X)$,需要用到概率公式：</p>
+<p><img src="https://user-gold-cdn.xitu.io/2019/11/12/16e5d934784439ca?w=755&h=258&f=png&s=43482" alt=""><br>所以求$P(Y=j|X)$就可以变成：<br>$$<br>P(Y=j|X) ;= \frac{\Pi_{i=1}^n P(Xi|Y=j) * P(Y=j)}{ P(X)} \<br>= \frac{\Pi_{i=1}^n P(Xi|Y=j) * P(Y=j)}{ P(X|Y=1) * P(Y=j) + P(X|(Y=1)^c) * P((Y=j)^c)} \<br>= \frac{\Pi_{i=1}^n P(Xi|Y=j) * P(Y=j)}{\sum_{j}(\Pi_{i=1}^n P(Xi|Y=j) * P(Y=j))}<br>$$<br>最后的式子，分母求和的J相当于Y结果的数量。</p>
+<h4 id="2-实践"><a href="#2-实践" class="headerlink" title="2.实践"></a>2.实践</h4><p>那么结合理论，就找一个数据集来进行一般分类预测，在具体实践前需要对数据集进行分类处理，即需要一个 <strong>训练集</strong> 一个 <strong>验证集</strong>, 本文采用的是 <a href="https://zh.wikipedia.org/wiki/%E8%87%AA%E5%8A%A9%E6%B3%95" target="_blank" rel="noopener">自助法</a>，理论就不多说了，直接截取 周志华的《机器学习》里的描述:</p>
+<p><img src="https://user-gold-cdn.xitu.io/2019/11/12/16e5d5df08ba5488?w=725&h=483&f=png&s=156241" alt="自助法"></p>
+<p>数据集来源 <strong>Kaggle</strong> 的 <a href="https://www.kaggle.com/uciml/mushroom-classification" target="_blank" rel="noopener">https://www.kaggle.com/uciml/mushroom-classification</a><br>，是一个关于蘑菇的数据集，里面含有23种大特征，然后区别了是否可食用，该例子就是通过特征来预测一个蘑菇是否是可食用。</p>
+<h5 id="2-1-Coding"><a href="#2-1-Coding" class="headerlink" title="2.1 Coding"></a>2.1 Coding</h5><h5 id="2-1-1-取数据"><a href="#2-1-1-取数据" class="headerlink" title="2.1.1 取数据"></a>2.1.1 取数据</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">import pandas as pd</span><br><span class="line"># import matplotlib.pyplot as plt  # 绘图库</span><br><span class="line"></span><br><span class="line">import numpy.matlib </span><br><span class="line">import numpy as np</span><br><span class="line"></span><br><span class="line">import os</span><br><span class="line"></span><br><span class="line"># data from https:&#x2F;&#x2F;www.kaggle.com&#x2F;uciml&#x2F;mushroom-classification</span><br><span class="line">df &#x3D; pd.read_csv(&quot;.&#x2F;..&#x2F;..&#x2F;LogisticRegression&#x2F;20191018&#x2F;input&#x2F;mushrooms.csv&quot;)</span><br><span class="line"></span><br><span class="line">print(&#39;size:&#39;, df.shape)</span><br><span class="line"></span><br><span class="line">#拆解训练集 与 验证集</span><br><span class="line">#训练集</span><br><span class="line">train_df &#x3D; []</span><br><span class="line">#验证集</span><br><span class="line">validation_df &#x3D; []</span><br><span class="line"></span><br><span class="line">m &#x3D; len(df)</span><br><span class="line"></span><br><span class="line">print(&#39;total:&#39;, m)</span><br></pre></td></tr></table></figure>
+
+<h5 id="2-1-2-区别测试集和验证集"><a href="#2-1-2-区别测试集和验证集" class="headerlink" title="2.1.2 区别测试集和验证集"></a>2.1.2 区别测试集和验证集</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">#使用自组法 获取训练集和验证集 (行数)</span><br><span class="line">validation_list &#x3D; np.random.choice(m, m) #取长度 0 ~ m-1 取m次 </span><br><span class="line">total_list &#x3D; np.arange(m)</span><br><span class="line">train_list &#x3D; np.setdiff1d(total_list, validation_list)</span><br><span class="line">print(train_list.shape)</span><br></pre></td></tr></table></figure>
+<p>其中 <code>np.setdiff1d</code> 方法是将 两个<code>np.array</code> 取差集作为训练集</p>
+<h5 id="2-1-3-格式化数据"><a href="#2-1-3-格式化数据" class="headerlink" title="2.1.3 格式化数据"></a>2.1.3 格式化数据</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">#从df 中取出特征以及分类结果</span><br><span class="line">df &#x3D; df[[&#39;class&#39;, &#39;cap-shape&#39;, &#39;cap-color&#39;, &#39;bruises&#39;, &#39;odor&#39;, &#39;gill-attachment&#39;, &#39;gill-spacing&#39;]];</span><br><span class="line">#取key做下标区别</span><br><span class="line">key &#x3D; [&#39;cap_shape_&#39;, &#39;cap_color_&#39;, &#39;bruises_&#39;, &#39;odor_&#39;, &#39;gill-attachment_&#39;, &#39;gill-spacing_&#39;]</span><br><span class="line"></span><br><span class="line">df &#x3D; np.array(df)</span><br><span class="line">#获取训练集</span><br><span class="line">for i in range(len(train_list)):</span><br><span class="line">    train_df.append(df[train_list[i]])   </span><br><span class="line">train_df &#x3D; np.array(train_df)</span><br><span class="line">#获取验证集</span><br><span class="line">for i in range(len(validation_list)):</span><br><span class="line">    validation_df.append(df[validation_list[i]])   </span><br><span class="line">validation_df &#x3D; np.array(validation_df)</span><br><span class="line">print(validation_df.shape)</span><br></pre></td></tr></table></figure>
+<p>字段class是表示是否是可使用数据里用的是 e(可食用)和p（有毒的）。</p>
+<h5 id="2-1-4-计算训练集里各个特征的概率"><a href="#2-1-4-计算训练集里各个特征的概率" class="headerlink" title="2.1.4 计算训练集里各个特征的概率"></a>2.1.4 计算训练集里各个特征的概率</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">#计算各个参数的概率</span><br><span class="line"></span><br><span class="line">#概率list</span><br><span class="line">p &#x3D; &#123;&#125;</span><br><span class="line">total_p &#x3D; &#123;&#125;</span><br><span class="line">train_df &#x3D; train_df.tolist()</span><br><span class="line">validation_df &#x3D; validation_df.tolist()</span><br><span class="line">for i in range(len(train_df)):</span><br><span class="line">    for j in range(len(key)):</span><br><span class="line">        key1 &#x3D; key[j] + str(train_df[i][j+1])</span><br><span class="line">        if key1 in p:</span><br><span class="line">            if train_df[i][0] in p[key1]:</span><br><span class="line">                p[key1][train_df[i][0]] &#x3D; p[key1][train_df[i][0]] + 1</span><br><span class="line">            else :</span><br><span class="line">                p[key1][train_df[i][0]] &#x3D; 1</span><br><span class="line">        else :</span><br><span class="line">            p[key1] &#x3D; &#123;train_df[i][0] : 1&#125;</span><br><span class="line">    if train_df[i][0] in total_p:</span><br><span class="line">        total_p[train_df[i][0]] &#x3D; total_p[train_df[i][0]] + 1</span><br><span class="line">    else :</span><br><span class="line">        total_p[train_df[i][0]] &#x3D; 1</span><br><span class="line">#加上拉普拉斯平滑</span><br><span class="line">for i in p:</span><br><span class="line">    for j in p[i]:</span><br><span class="line">        p[i][j] &#x3D; (p[i][j] + 1) &#x2F; (total_p[j] + len(train_df))</span><br><span class="line"></span><br><span class="line">for i in total_p:</span><br><span class="line">    total_p[i] &#x3D; total_p[i] &#x2F; m</span><br><span class="line"></span><br><span class="line">print(&#39;train set p:&#39;, p)</span><br><span class="line">print(&#39;total set p:&#39;, total_p)</span><br></pre></td></tr></table></figure>
+<p>就是上面的求各个特征的概率$P(X_i|Y) ;P(Y=j)$方法。接下来就是使用验证集合验证了。</p>
+<h5 id="2-1-5-验证结果"><a href="#2-1-5-验证结果" class="headerlink" title="2.1.5 验证结果"></a>2.1.5 验证结果</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line">right_num &#x3D; 0</span><br><span class="line">error_num &#x3D; 0</span><br><span class="line">validation_num &#x3D; len(validation_df)</span><br><span class="line">print(&#39;start validat.....\n&#39;)</span><br><span class="line">for i in range(validation_num):</span><br><span class="line">    data &#x3D; validation_df[i]</span><br><span class="line">    #各个后验概率的字典</span><br><span class="line">    validation_p &#x3D; &#123;&#125;</span><br><span class="line">    #p(x)的多元概率和</span><br><span class="line">    total_validation_p &#x3D; 0</span><br><span class="line">    for j in total_p:</span><br><span class="line">        #分类器可能不止2种</span><br><span class="line">        _p_x_i &#x3D; 1</span><br><span class="line">        #计算特征p(xi|y)的概率</span><br><span class="line">        for z in range(len(key)):</span><br><span class="line">            key1 &#x3D;  key[z] + str(data[z + 1])</span><br><span class="line">            if key1 not in p:</span><br><span class="line">                 #加上拉普拉斯平滑</span><br><span class="line">                _p_x_i &#x3D; _p_x_i * (1 &#x2F; (len(train_df) + len(key)))</span><br><span class="line">            else :</span><br><span class="line">                if j not in p[key1]:</span><br><span class="line">                    #加上拉普拉斯平滑</span><br><span class="line">                    _p_x_i &#x3D; _p_x_i * (1 &#x2F; (len(train_df) + len(key)))</span><br><span class="line">                else :</span><br><span class="line">                    _p_x_i &#x3D; _p_x_i * p[key1][j]</span><br><span class="line">        _validation_p &#x3D; total_p[j] * _p_x_i</span><br><span class="line">        validation_p[j] &#x3D; _validation_p</span><br><span class="line">        total_validation_p &#x3D; total_validation_p + _validation_p</span><br><span class="line">    _max &#x3D; 0</span><br><span class="line">    _validation_result &#x3D; &#39;&#39;</span><br><span class="line">    #这一步应该可以省略 用来计算分母p(x)的</span><br><span class="line">    for j in total_p:</span><br><span class="line">        validation_p[j] &#x3D; validation_p[j] &#x2F; total_validation_p</span><br><span class="line">    #判断最大后验概率</span><br><span class="line">    for j in validation_p:</span><br><span class="line">        if validation_p[j] &gt; _max:</span><br><span class="line">            _max &#x3D; validation_p[j]</span><br><span class="line">            _validation_result &#x3D; j</span><br><span class="line">    print(&#39;validat data :&#39;, data)</span><br><span class="line">    print(&#39;out of test result :&#39;, _validation_result)</span><br><span class="line">    # data[0]是验证集合的class的位置</span><br><span class="line">    if data[0] &#x3D;&#x3D; _validation_result:</span><br><span class="line">        print(&#39;result correct&#39;)</span><br><span class="line">        right_num &#x3D; right_num + 1</span><br><span class="line">    else :</span><br><span class="line">        print(&#39;result fail&#39;)</span><br><span class="line">        print(&#39;validation_p is :&#39;, validation_p)</span><br><span class="line">        error_num &#x3D; error_num + 1</span><br><span class="line">print(&#39;run over...&#39;)</span><br><span class="line">print(&#39;validation num:&#39;, validation_num)</span><br><span class="line">print(&#39;validation right num&#39;, right_num)</span><br><span class="line">print(&quot;validation right rate %s&quot; %str(right_num &#x2F; validation_num * 100))</span><br><span class="line">print(&#39;validation error num&#39;, error_num)</span><br><span class="line">print(&quot;validation error rate %s&quot; %str(error_num &#x2F; validation_num * 100))</span><br></pre></td></tr></table></figure>
+<h5 id="2-1-6-查看结果"><a href="#2-1-6-查看结果" class="headerlink" title="2.1.6 查看结果"></a>2.1.6 查看结果</h5><p>跑一下代码，查看最后输出结果：</p>
+<p><img src="https://user-gold-cdn.xitu.io/2019/11/12/16e5e3986d5586e4?w=321&h=97&f=png&s=43581" alt=""><br>正确率在98%左右，其中有1.5%的数据错误，取了一条错误的查看输出，发现<br><img src="https://user-gold-cdn.xitu.io/2019/11/12/16e5e3ac90717cc5?w=503&h=63&f=png&s=36969" alt=""><br>e的概率是接近1的原因应该是这条新数据（在训练集里没有的特征），不过也可能是因为是关联特征（蘑菇的几个形态关联性比较大），因为使用了拉普拉斯平滑所以一些没有的数据（概率为0）概率会大于0，不然会导致代码报错。</p>
+<p>到此，本人的机器学习的第三个算法记录就到这里结束了~</p>
+<p>最后，cs229讲义牛逼！</p>
+<p>以上。</p>
+<p>代码git地址: <a href="https://github.com/LinsVert/Machine-Learning/tree/master/GenerativeLearningAlgorithms/20191108" target="_blank" rel="noopener">地址</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Learning-%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" rel="tag"># Learning,机器学习</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/08/24/%E5%88%9D%E6%B6%89%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0-1-%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E4%B8%AA%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E7%AE%97%E6%B3%95/" rel="next" title="初涉机器学习--1.我的第一个机器学习算法">
+                <i class="fa fa-chevron-left"></i> 初涉机器学习--1.我的第一个机器学习算法
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">LinsVert</p>
+              <p class="site-description motion-element" itemprop="description">一只想变成咸鱼的猿。</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%20%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">5</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                
+                  <span class="site-state-item-count">3</span>
+                  <span class="site-state-item-name">categories</span>
+                
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                
+                  <span class="site-state-item-count">3</span>
+                  <span class="site-state-item-name">tags</span>
+                
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/LinsVert" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="mailto:lindebiaoldb@gmail.com" target="_blank" title="E-Mail">
+                      
+                        <i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.jianshu.com/u/6b1fa1764b51" target="_blank" title="简书">
+                      
+                        <i class="fa fa-fw fa-globe"></i>简书</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://juejin.im/user/5995568cf265da24701e9d67" target="_blank" title="掘金">
+                      
+                        <i class="fa fa-fw fa-globe"></i>掘金</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+      <div class='music163'>
+        <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width="330" height="86" src="//music.163.com/outchain/player?type=2&id=26908739&auto=1&height=66"></iframe>
+      </div>
+      
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-5"><a class="nav-link" href="#分类问题和线性的问题有些区别，它的预测结果是离散的，比如判断一封邮件是否是垃圾邮件，它结果只可能是yes-no-今天带来的是基于概率来预测分类结果。而本篇文章使用的算法叫做朴素贝叶斯分类器，是基于朴素贝叶斯对于多特征参数的分类问题。"><span class="nav-number">1.</span> <span class="nav-text">分类问题和线性的问题有些区别，它的预测结果是离散的，比如判断一封邮件是否是垃圾邮件，它结果只可能是yes,no,今天带来的是基于概率来预测分类结果。而本篇文章使用的算法叫做朴素贝叶斯分类器，是基于朴素贝叶斯对于多特征参数的分类问题。</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#贝叶斯定理就不细说了，大学概率论一般都应该学过，引用下-WIKI"><span class="nav-number">2.</span> <span class="nav-text">贝叶斯定理就不细说了，大学概率论一般都应该学过，引用下 WIKI:</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-引入内容"><span class="nav-number"></span> <span class="nav-text">1.引入内容:</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-实践"><span class="nav-number"></span> <span class="nav-text">2.实践</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#2-1-Coding"><span class="nav-number">1.</span> <span class="nav-text">2.1 Coding</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-1-1-取数据"><span class="nav-number">2.</span> <span class="nav-text">2.1.1 取数据</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-1-2-区别测试集和验证集"><span class="nav-number">3.</span> <span class="nav-text">2.1.2 区别测试集和验证集</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-1-3-格式化数据"><span class="nav-number">4.</span> <span class="nav-text">2.1.3 格式化数据</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-1-4-计算训练集里各个特征的概率"><span class="nav-number">5.</span> <span class="nav-text">2.1.4 计算训练集里各个特征的概率</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-1-5-验证结果"><span class="nav-number">6.</span> <span class="nav-text">2.1.5 验证结果</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-1-6-查看结果"><span class="nav-number">7.</span> <span class="nav-text">2.1.6 查看结果</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">LinsVert</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config("");
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+  
+
+
+  
+
+  
+
+</body>
+</html>

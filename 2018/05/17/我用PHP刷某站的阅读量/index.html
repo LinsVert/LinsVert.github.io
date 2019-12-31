@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="en">
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-center-simple.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="投机倒把," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="之前逛掘金帖子的时候，发现一个群的群主拿Python刷了他在某个博客的阅读量，今天我也用世界上最好的语言 : ) PHP来 刷一刷某站点的阅读量。 框架用的是 PHPSpider一个比较轻量的爬虫框架。本爬虫主要用了其中的 request库和 selector库。想要了解这个框架的可以链过去看看。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="我用PHP刷某站的阅读量">
+<meta property="og:url" content="https://blog.lindebiao.top/2018/05/17/%E6%88%91%E7%94%A8PHP%E5%88%B7%E6%9F%90%E7%AB%99%E7%9A%84%E9%98%85%E8%AF%BB%E9%87%8F/index.html">
+<meta property="og:site_name" content="程序员小站">
+<meta property="og:description" content="之前逛掘金帖子的时候，发现一个群的群主拿Python刷了他在某个博客的阅读量，今天我也用世界上最好的语言 : ) PHP来 刷一刷某站点的阅读量。 框架用的是 PHPSpider一个比较轻量的爬虫框架。本爬虫主要用了其中的 request库和 selector库。想要了解这个框架的可以链过去看看。">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/7393873-44261b7a2aaf10db.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/520">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/7393873-24d4fad4ea0777cc.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/520">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/7393873-b8f629fb87ee4000.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/520">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/7393873-da85b3d69d924f36.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/520">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/7393873-82ecbc67e0b7e471.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/520">
+<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/7393873-56b30ad8a587c043.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/520">
+<meta property="article:published_time" content="2018-05-16T16:00:19.000Z">
+<meta property="article:modified_time" content="2019-12-31T07:30:54.767Z">
+<meta property="article:author" content="LinsVert">
+<meta property="article:tag" content="投机倒把">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://upload-images.jianshu.io/upload_images/7393873-44261b7a2aaf10db.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/520">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://blog.lindebiao.top/2018/05/17/我用PHP刷某站的阅读量/"/>
+
+
+
+
+
+  <title>我用PHP刷某站的阅读量 | 程序员小站</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 4.2.0"><!-- hexo-inject:begin --><!-- hexo-inject:end --></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">程序员小站</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/%20" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/%20" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            Tags
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/%20" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/%20" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            Archives
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br />
+            
+            About
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://blog.lindebiao.top/2018/05/17/%E6%88%91%E7%94%A8PHP%E5%88%B7%E6%9F%90%E7%AB%99%E7%9A%84%E9%98%85%E8%AF%BB%E9%87%8F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="LinsVert">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="程序员小站">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">我用PHP刷某站的阅读量</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2018-05-17T00:00:19+08:00">
+                2018-05-17
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%8A%95%E6%9C%BA%E5%80%92%E6%8A%8A/" itemprop="url" rel="index">
+                    <span itemprop="name">投机倒把</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>之前逛掘金帖子的时候，发现一个群的群主拿Python刷了他在某个博客的阅读量，今天我也用世界上最好的语言 : ) PHP来 刷一刷某站点的阅读量。</p>
+<p>框架用的是 <a href="https://github.com/owner888/phpspider" target="_blank" rel="noopener">PHPSpider</a>一个比较轻量的爬虫框架。本爬虫主要用了其中的 <code>request库</code>和 <code>selector库</code>。想要了解这个框架的可以链过去看看。</p>
+<a id="more"></a>
+
+<h6 id="进入正题："><a href="#进入正题：" class="headerlink" title="进入正题："></a>进入正题：</h6><p>1.瞎几把分析一波：进入文章详情页，刷新几遍，发现阅读量上去了，说明刷阅读量方法可行。<br><img src="https://upload-images.jianshu.io/upload_images/7393873-44261b7a2aaf10db.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/520" alt="第一次"><br><img src="https://upload-images.jianshu.io/upload_images/7393873-24d4fad4ea0777cc.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/520" alt="第三次"></p>
+<p>2.先直接访问文章详情页</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">include __DIR__.&quot;&#x2F;..&#x2F;autoloader.php&quot;;</span><br><span class="line">use spider\core\requests;</span><br><span class="line">$url &#x3D; &quot;https:&#x2F;&#x2F;www.jianshu.com&#x2F;p&#x2F;26c2eca28dc5&quot;;</span><br><span class="line">$html &#x3D; requests::get($url);&#x2F;&#x2F;简单的get</span><br></pre></td></tr></table></figure>
+<p>php cli 之，然后刷新页面，发现没增加次数，说明肯定存在某种方式的验证。万金油先加<code>referer header</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">include __DIR__.&quot;&#x2F;..&#x2F;autoloader.php&quot;;</span><br><span class="line">use spider\core\requests;</span><br><span class="line">$url &#x3D; &quot;https:&#x2F;&#x2F;www.jianshu.com&#x2F;p&#x2F;26c2eca28dc5&quot;;</span><br><span class="line">$referer &#x3D; &quot;https:&#x2F;&#x2F;www.jianshu.com&quot;;</span><br><span class="line">requests::set_referer($referer);</span><br><span class="line">$html &#x3D; requests::get($url);&#x2F;&#x2F;简单的get</span><br></pre></td></tr></table></figure>
+<p>cli然后刷新，还是没用，那就再复制这个页面的 <code>cookie</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">include __DIR__.&quot;&#x2F;..&#x2F;autoloader.php&quot;;</span><br><span class="line">use spider\core\requests;</span><br><span class="line">$url &#x3D; &quot;https:&#x2F;&#x2F;www.jianshu.com&#x2F;p&#x2F;26c2eca28dc5&quot;;</span><br><span class="line">$referer &#x3D; &quot;https:&#x2F;&#x2F;www.jianshu.com&quot;;</span><br><span class="line">$cookie &#x3D; &quot;自己复制，太长就不贴了&quot;</span><br><span class="line">requests::set_referer($referer);</span><br><span class="line">requests::set_cookie($referer,$cookie);</span><br><span class="line">$html &#x3D; requests::get($url);&#x2F;&#x2F;简单的get</span><br></pre></td></tr></table></figure>
+<p>发现还是没用，难道是<code>userAgent</code>?加了发现还是不行，那么就可能存在JS动态获取阅读量的可能。F12一波，看下<code>XHR</code>,这个<code>mark_viewd.json</code>明显就是加阅读量的方法了,看了下返回204，not data，说明阅读量是下次刷新生效。<br><img src="https://upload-images.jianshu.io/upload_images/7393873-b8f629fb87ee4000.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/520" alt="增加阅读量的请求"><br>请求内容：<br><img src="https://upload-images.jianshu.io/upload_images/7393873-da85b3d69d924f36.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/520" alt="请求体"></p>
+<p>找波规律：<br>1.请求的url中有该文章的关键字<br>2.post 有个奇怪的uuid和 referer<br>说明请求的url <code>notes/</code>后跟的是这个文章的资源ID；至于uuid发现其他AJAX请求没有给到这个值，极有可能是事先渲染好的，果断在Elements 中Ctrl+F一波<br><img src="https://upload-images.jianshu.io/upload_images/7393873-82ecbc67e0b7e471.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/520" alt="文章页中的uuid"><br>发现文章详情页的Script 有个JSON包含这个uuid,那么逻辑就可以理顺了，先验证是否是这个请求增加阅读量的。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">$url &#x3D; &quot;https:&#x2F;&#x2F;www.jianshu.com&#x2F;notes&#x2F;5764256f0c43&#x2F;mark_viewed.json&quot;;</span><br><span class="line">$referer &#x3D; &quot;https:&#x2F;&#x2F;www.jianshu.com&#x2F;p&#x2F;5764256f0c43&quot;;</span><br><span class="line">requests::set_referer($referer);&#x2F;&#x2F;必须将referer调成当前页面</span><br><span class="line">$data &#x3D; [</span><br><span class="line">&quot;uuid&quot;&#x3D;&gt;&quot;912e01f5-6da4-4bfd-8e71-4d1b62499709&quot;,</span><br><span class="line">&quot;referer&quot;&#x3D;&gt;&quot;https:&#x2F;&#x2F;www.jianshu.com&#x2F;&quot;</span><br><span class="line">];</span><br><span class="line">requests::post($url,json_encode($data));</span><br></pre></td></tr></table></figure>
+<p>执行之后发现次数增加了，需要注意的是 <code>request::referer() 请求体referer</code>要设置成该页面的值，不然不会加阅读量，设置成<code>www.jianshu.com</code>我没测试。</p>
+<p>那么接下来就是撸波代码,用上多进程同时刷我自己的其他文章：</p>
+<h6 id="Code"><a href="#Code" class="headerlink" title="Code"></a>Code</h6><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line">&#x2F;**</span><br><span class="line"> * Created by PhpStorm.</span><br><span class="line"> * User: lins</span><br><span class="line"> * Date: 14&#x2F;05&#x2F;2018</span><br><span class="line"> * Time: 11:26 PM</span><br><span class="line"> *&#x2F;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F;简书 刷阅读量</span><br><span class="line">include __DIR__.&quot;&#x2F;..&#x2F;autoloader.php&quot;;</span><br><span class="line">use spider\core\requests;</span><br><span class="line">use spider\core\selector;</span><br><span class="line"></span><br><span class="line">$url &#x3D; &quot;https:&#x2F;&#x2F;www.jianshu.com&#x2F;u&#x2F;6b1fa1764b51&quot;;</span><br><span class="line">$referer &#x3D; &quot;https:&#x2F;&#x2F;www.jianshu.com&quot;;</span><br><span class="line">$urll &#x3D; &quot;https:&#x2F;&#x2F;www.jianshu.com&#x2F;p&#x2F;26c2eca28dc5&quot;;</span><br><span class="line">$userAgent &#x3D; &quot;Mozilla&#x2F;5.0 (Macintosh; Intel Mac OS X 10_13_0) AppleWebKit&#x2F;537.36 (KHTML, like Gecko) Chrome&#x2F;66.0.3359.139 Safari&#x2F;537.36&quot;;</span><br><span class="line">$cookie &#x3D; &quot;_ga&#x3D;GA1.2.1446998420.1512720610; read_mode&#x3D;day; default_font&#x3D;font2; locale&#x3D;zh-CN; web-note-ad-fixed&#x3D;1524537468387; Hm_lvt_0c0e9d9b1e7d617b3e6842e85b9fb068&#x3D;1526200190,1526220098,1526282339,1526312631; sensorsdata2015jssdkcross&#x3D;%7B%22distinct_id%22%3A%22160352cb5d7300-071265b68a5aa1-17396d57-1296000-160352cb5d8d37%22%2C%22%24device_id%22%3A%22160352cb5d7300-071265b68a5aa1-17396d57-1296000-160352cb5d8d37%22%2C%22props%22%3A%7B%22%24latest_traffic_source_type%22%3A%22%E8%87%AA%E7%84%B6%E6%90%9C%E7%B4%A2%E6%B5%81%E9%87%8F%22%2C%22%24latest_referrer%22%3A%22https%3A%2F%2Fwww.google.co.jp%2F%22%2C%22%24latest_referrer_host%22%3A%22www.google.co.jp%22%2C%22%24latest_search_keyword%22%3A%22%E6%9C%AA%E5%8F%96%E5%88%B0%E5%80%BC%22%2C%22%24latest_utm_source%22%3A%22desktop%22%2C%22%24latest_utm_medium%22%3A%22not-signed-in-like-button%22%2C%22%24latest_utm_campaign%22%3A%22maleskine%22%2C%22%24latest_utm_content%22%3A%22note%22%7D%2C%22first_id%22%3A%22%22%7D; _m7e_session&#x3D;9cfeba4267a7645d2058d2a971670be3; signin_redirect&#x3D;https%3A%2F%2Fwww.jianshu.com%2Fp%2F26c2eca28dc5; Hm_lpvt_0c0e9d9b1e7d617b3e6842e85b9fb068&#x3D;1526391092&quot;;</span><br><span class="line">requests::set_referer($referer);</span><br><span class="line"></span><br><span class="line">requests::set_cookie($referer,$cookie);</span><br><span class="line"></span><br><span class="line">requests::set_useragent($userAgent);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">$html &#x3D; requests::get($url);</span><br><span class="line"></span><br><span class="line">$result &#x3D; selector::select($html,&#39;&#x2F;&#x2F;div[@class&#x3D;&quot;content&quot;]&#x2F;a&#x2F;@href&#39;);&#x2F;&#x2F;选择器拿到用户下的所有文章</span><br><span class="line"></span><br><span class="line">$result &#x3D; array_map(function ($e)use($referer)&#123;</span><br><span class="line">    $word &#x3D; explode(&#39;&#x2F;&#39;,$e);&#x2F;&#x2F;word关键词用来拼接json</span><br><span class="line">    $word &#x3D; $word[2];</span><br><span class="line">    $ref &#x3D; $referer.$e;&#x2F;&#x2F;文章地址</span><br><span class="line">    return [&#39;word&#39;&#x3D;&gt;$word,&#39;referer&#39;&#x3D;&gt;$ref];</span><br><span class="line">&#125;,(array)$result);</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F;玩下fork</span><br><span class="line"></span><br><span class="line">$num &#x3D; 4;</span><br><span class="line">$runTimes &#x3D; 7200;</span><br><span class="line">if(count($result) &lt; $num)&#123;</span><br><span class="line">    $num &#x3D; count($result);</span><br><span class="line">&#125;</span><br><span class="line">var_dump($num);</span><br><span class="line">for ($i &#x3D; 0;$i&lt;$num;$i++)&#123;</span><br><span class="line"></span><br><span class="line">    $pid &#x3D; pcntl_fork();</span><br><span class="line">    if(0 &lt; $pid)&#123;</span><br><span class="line">        &#x2F;&#x2F;father</span><br><span class="line">        &#x2F;&#x2F;准备回收</span><br><span class="line">        pcntl_signal(SIGCHLD,function() use( $pid ) &#123;</span><br><span class="line">            echo &quot;收到子进程退出&quot;.PHP_EOL;</span><br><span class="line">            pcntl_waitpid( $pid, $status, WNOHANG );</span><br><span class="line">        &#125;);</span><br><span class="line">&#x2F;&#x2F;        pcntl_alarm(1);</span><br><span class="line">        pcntl_signal_dispatch();</span><br><span class="line"></span><br><span class="line">    &#125;elseif(0 &#x3D;&#x3D; $pid)&#123;</span><br><span class="line">        $time &#x3D; time() + $runTimes;</span><br><span class="line">        while(time() &lt; $time)&#123;</span><br><span class="line">            $url &#x3D; toSee($i,$result,$num);</span><br><span class="line">            file_put_contents(&#39;debug.json&#39;,json_encode($url).PHP_EOL,FILE_APPEND);</span><br><span class="line"></span><br><span class="line">            sleep(rand(1,5));</span><br><span class="line">        &#125;</span><br><span class="line">        echo $pid.&quot;*$i run finished &quot;.date(&#39;Y-m-d H:i:s&#39;).PHP_EOL;</span><br><span class="line">        exit;</span><br><span class="line">    &#125;else &#123;</span><br><span class="line">        echo &#39;fork error&#39;;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">function toSee(int $i,array $result,int $num)&#123;</span><br><span class="line">    $referer &#x3D; &quot;https:&#x2F;&#x2F;www.jianshu.com&#x2F;u&#x2F;6b1fa1764b51&quot;;</span><br><span class="line">    $url &#x3D; [];</span><br><span class="line">    $reNums &#x3D; count($result);</span><br><span class="line">    &#x2F;&#x2F;将抓到的文章资源平均分配到子进程中</span><br><span class="line">    if ($reNums &#x3D;&#x3D; $num)&#123;</span><br><span class="line">        $url[] &#x3D; $result[$i];</span><br><span class="line">    &#125;else &#123;</span><br><span class="line">        do&#123;</span><br><span class="line">            $url[] &#x3D; $result[$i];</span><br><span class="line">            $i &#x3D; $i+$num;</span><br><span class="line">        &#125;while(isset($result[$i]));</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">    foreach ($url as $key) &#123;</span><br><span class="line">        $ulas &#x3D; &quot;https:&#x2F;&#x2F;www.jianshu.com&#x2F;notes&#x2F;%s&#x2F;mark_viewed.json&quot;;</span><br><span class="line">        $res &#x3D; requests::get($key[&#39;referer&#39;]);&#x2F;&#x2F;拿到文章详情页</span><br><span class="line"></span><br><span class="line">        $path &#x3D; &quot;&#x2F;html&#x2F;body&#x2F;script[1]&#x2F;text()&quot;;</span><br><span class="line"></span><br><span class="line">        $ress &#x3D; selector::select($res,$path);&#x2F;&#x2F;拿到script 下的json</span><br><span class="line">        $ress &#x3D; json_decode($ress);</span><br><span class="line"></span><br><span class="line">        $data &#x3D; [</span><br><span class="line">            &quot;referer&quot; &#x3D;&gt; $referer,&#x2F;&#x2F;这个值好像随意是jianshu的域名就可以</span><br><span class="line">            &#39;uuid&#39; &#x3D;&gt; $ress-&gt;note_show-&gt;uuid</span><br><span class="line">        ];</span><br><span class="line">        $ulas &#x3D; sprintf($ulas,$key[&#39;word&#39;]);</span><br><span class="line">        echo $ulas.PHP_EOL;</span><br><span class="line">        requests::set_referer($key[&#39;referer&#39;]);&#x2F;&#x2F;必须将referer调成当前页面</span><br><span class="line">        requests::post($ulas,json_encode($data));</span><br><span class="line">    </span><br><span class="line">    &#125;</span><br><span class="line">    return $url;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>本文用的抓取语法是<a href="http://www.w3school.com.cn/xpath/xpath_syntax.asp" target="_blank" rel="noopener">XPATH</a>有兴趣的可以了解下。<br>保存，然后丢到服务器，开个定时脚本跑，大功告成。</p>
+<p>PS:这段代码请放在项目的demo文件夹里，然后<code>php 文件名.php</code>就可以了。</p>
+<p>值得注意的是，有些*unix服务器<code>curl</code>是 nss 方式 请求ssl的 pctnl_frok的时候会报错，需要将curl 请求ssl的nss 变为 openssl,方法如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">先yum update openssl</span><br><span class="line"></span><br><span class="line">再yum update curl</span><br><span class="line"></span><br><span class="line">curl -V</span><br></pre></td></tr></table></figure>
+<p>如果不是下面的 openssl<br><img src="https://upload-images.jianshu.io/upload_images/7393873-56b30ad8a587c043.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/520" alt="curl -V"><br>那就看下这个链接吧，<br><a href="https://www.cnblogs.com/showker/p/4706271.html" target="_blank" rel="noopener">https://www.cnblogs.com/showker/p/4706271.html</a></p>
+<p>以上。<br>撒花。:)<br>小刷怡情，大刷伤身。</p>
+<p>2018-05-20 22:27 更新 ，因为会被jianshu大佬ban Ip 所以我另外写了爬虫抓取免费的ip代理，相关更新代码和更新版本请异步小弟的  <a href="https://github.com/LinsVert/Spider" target="_blank" rel="noopener">GayHub</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/%E6%8A%95%E6%9C%BA%E5%80%92%E6%8A%8A/" rel="tag"># 投机倒把</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/12/16/%E6%8A%95%E6%9C%BA%E5%80%92%E6%8A%8A%E4%B9%8B%E9%82%80%E8%AF%B7%E6%92%B8ccvt%E5%B8%81/" rel="prev" title="投机倒把之邀请撸ccvt币">
+                投机倒把之邀请撸ccvt币 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">LinsVert</p>
+              <p class="site-description motion-element" itemprop="description">一只想变成咸鱼的猿。</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%20%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">5</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                
+                  <span class="site-state-item-count">3</span>
+                  <span class="site-state-item-name">categories</span>
+                
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                
+                  <span class="site-state-item-count">3</span>
+                  <span class="site-state-item-name">tags</span>
+                
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/LinsVert" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="mailto:lindebiaoldb@gmail.com" target="_blank" title="E-Mail">
+                      
+                        <i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.jianshu.com/u/6b1fa1764b51" target="_blank" title="简书">
+                      
+                        <i class="fa fa-fw fa-globe"></i>简书</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://juejin.im/user/5995568cf265da24701e9d67" target="_blank" title="掘金">
+                      
+                        <i class="fa fa-fw fa-globe"></i>掘金</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+      <div class='music163'>
+        <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width="330" height="86" src="//music.163.com/outchain/player?type=2&id=26908739&auto=1&height=66"></iframe>
+      </div>
+      
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-6"><a class="nav-link" href="#进入正题："><span class="nav-number">1.</span> <span class="nav-text">进入正题：</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#Code"><span class="nav-number">2.</span> <span class="nav-text">Code</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">LinsVert</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config("");
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+  
+
+
+  
+
+  
+
+</body>
+</html>
