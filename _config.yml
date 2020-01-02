@@ -94,11 +94,11 @@ exclude:
 ignore:
 
 math:
-engine: 'mathjax' # or 'katex'
-mathjax:
-  # src: custom_mathjax_source
-  config:
-    # MathJax config
+  engine: 'mathjax' # or 'katex'
+  mathjax:
+    # src: custom_mathjax_source
+    config:
+      # MathJax config
 # Extensions
 ## Plugins: https://hexo.io/plugins/
 ## Themes: https://hexo.io/themes/
@@ -108,4 +108,5 @@ theme: next
 ## Docs: https://hexo.io/docs/deployment.html
 deploy:
   type: git
-  repository: https://github.com/LinsVert/LinsVert.github.io
+  repository: git@github.com:LinsVert/LinsVert.github.io.git
+  branch: master
